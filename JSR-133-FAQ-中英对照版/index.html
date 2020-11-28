@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.1/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yellowstar5.cn","root":"/","scheme":"Muse","version":"8.0.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
+  </script>
+
+  <meta name="description" content="由于本人能力有限，如有错误，欢迎指出。原文地址：https:&#x2F;&#x2F;www.cs.umd.edu&#x2F;~pugh&#x2F;java&#x2F;memoryModel&#x2F;jsr-133-faq.html如果你喜欢原文那种板式的话，可以看这个：https:&#x2F;&#x2F;yellowstar5.cn&#x2F;direct&#x2F;jsr-133-faq-chinese.html What is a memory model, anyway? (无论如何，什">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JSR-133 FAQ 中英对照版翻译">
+<meta property="og:url" content="yellowstar5.cn/JSR-133-FAQ-%E4%B8%AD%E8%8B%B1%E5%AF%B9%E7%85%A7%E7%89%88/index.html">
+<meta property="og:site_name" content="YellowStar5">
+<meta property="og:description" content="由于本人能力有限，如有错误，欢迎指出。原文地址：https:&#x2F;&#x2F;www.cs.umd.edu&#x2F;~pugh&#x2F;java&#x2F;memoryModel&#x2F;jsr-133-faq.html如果你喜欢原文那种板式的话，可以看这个：https:&#x2F;&#x2F;yellowstar5.cn&#x2F;direct&#x2F;jsr-133-faq-chinese.html What is a memory model, anyway? (无论如何，什">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-08-31T02:43:17.000Z">
+<meta property="article:modified_time" content="2020-09-14T06:43:55.177Z">
+<meta property="article:author" content="YellowStar5">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="Java内存模型">
+<meta property="article:tag" content="JSR-133 FAQ">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="yellowstar5.cn/JSR-133-FAQ-%E4%B8%AD%E8%8B%B1%E5%AF%B9%E7%85%A7%E7%89%88/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>JSR-133 FAQ 中英对照版翻译 | YellowStar5</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">YellowStar5</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">风物长宜放眼量</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <section class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#What-is-a-memory-model-anyway-%E6%97%A0%E8%AE%BA%E5%A6%82%E4%BD%95%EF%BC%8C%E4%BB%80%E4%B9%88%E6%98%AF%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B%EF%BC%9F"><span class="nav-number">1.</span> <span class="nav-text">What is a memory model, anyway? (无论如何，什么是内存模型？)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Do-other-languages-like-C-have-a-memory-model-%E5%85%B6%E4%BB%96%E8%AF%AD%E8%A8%80%EF%BC%88%E4%BE%8B%E5%A6%82-C-%EF%BC%89%E6%98%AF%E5%90%A6%E5%85%B7%E6%9C%89%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B%EF%BC%9F"><span class="nav-number">2.</span> <span class="nav-text">Do other languages, like C++, have a memory model? (其他语言（例如 C++）是否具有内存模型？)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#What-is-JSR-133-about-JSR-133%E6%98%AF%E5%85%B3%E4%BA%8E%E4%BB%80%E4%B9%88%E7%9A%84%EF%BC%9F"><span class="nav-number">3.</span> <span class="nav-text">What is JSR 133 about? (JSR 133是关于什么的？)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#What-is-meant-by-reordering-%E9%87%8D%E6%8E%92%E5%BA%8F%E6%98%AF%E4%BB%80%E4%B9%88%E6%84%8F%E6%80%9D%EF%BC%9F"><span class="nav-number">4.</span> <span class="nav-text">What is meant by reordering? (重排序是什么意思？)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#What-do-you-mean-by-incorrectly-synchronized-%E4%BD%A0%E6%89%80%E8%AF%B4%E7%9A%84%E9%94%99%E8%AF%AF%E5%90%8C%E6%AD%A5%E6%98%AF%E4%BB%80%E4%B9%88%E6%84%8F%E6%80%9D%EF%BC%9F"><span class="nav-number">5.</span> <span class="nav-text">What do you mean by incorrectly synchronized? (你所说的错误同步是什么意思？)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#What-does-synchronization-do-%E5%90%8C%E6%AD%A5%E6%9C%89%E4%BB%80%E4%B9%88%E4%BD%9C%E7%94%A8%EF%BC%9F"><span class="nav-number">6.</span> <span class="nav-text">What does synchronization do? (同步有什么作用？)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#How-can-final-fields-appear-to-change-their-values-final-%E5%AD%97%E6%AE%B5%E5%A6%82%E4%BD%95%E6%94%B9%E5%8F%98-%E4%BB%96%E4%BB%AC%E7%9A%84%E5%80%BC%EF%BC%9F"><span class="nav-number">7.</span> <span class="nav-text">How can final fields appear to change their values? (final 字段如何改变 他们的值？)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#How-do-final-fields-work-under-the-new-JMM-%E5%9C%A8%E6%96%B0%E7%9A%84-JMM-%E4%B8%8B-final-%E5%AD%97%E6%AE%B5%E5%A6%82%E4%BD%95%E5%B7%A5%E4%BD%9C%EF%BC%9F"><span class="nav-number">8.</span> <span class="nav-text">How do final fields work under the new JMM? (在新的 JMM 下 final 字段如何工作？)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#What-does-volatile-do-volatile-%E6%9C%89%E4%BB%80%E4%B9%88%E4%BD%9C%E7%94%A8%EF%BC%9F"><span class="nav-number">9.</span> <span class="nav-text">What does volatile do? (volatile 有什么作用？)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Does-the-new-memory-model-fix-the-%E2%80%9Cdouble-checked-locking%E2%80%9D-problem-%E6%96%B0%E7%9A%84%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B%E6%98%AF%E5%90%A6%E5%8F%AF%E4%BB%A5%E8%A7%A3%E5%86%B3%E2%80%9C%E5%8F%8C%E9%87%8D%E6%A3%80%E6%9F%A5%E9%94%81%E5%AE%9A%E2%80%9D%E9%97%AE%E9%A2%98%EF%BC%9F"><span class="nav-number">10.</span> <span class="nav-text">Does the new memory model fix the “double-checked locking” problem? (新的内存模型是否可以解决“双重检查锁定”问题？)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#What-if-I%E2%80%99m-writing-a-VM-%E5%A6%82%E6%9E%9C%E6%88%91%E6%AD%A3%E5%9C%A8%E7%BC%96%E5%86%99%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%80%8E%E4%B9%88%E5%8A%9E%EF%BC%9F"><span class="nav-number">11.</span> <span class="nav-text">What if I’m writing a VM? (如果我正在编写虚拟机怎么办？)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Why-should-I-care-%E6%88%91%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E5%9C%A8%E4%B9%8E%EF%BC%9F"><span class="nav-number">12.</span> <span class="nav-text">Why should I care? (我为什么要在乎？)</span></a></li></ol></div>
+        </section>
+        <!--/noindex-->
+
+        <section class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">YellowStar5</p>
+  <div class="site-description" itemprop="description">Java后端程序员，想做个手艺人。</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">14</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">34</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://www.douban.com/people/146579421/" title="豆瓣 → https:&#x2F;&#x2F;www.douban.com&#x2F;people&#x2F;146579421&#x2F;" rel="noopener" target="_blank"><i class="fas fa-book-reader fa-fw"></i>豆瓣</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/codercuixin" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;codercuixin" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/u/5509464340" title="微博 → https:&#x2F;&#x2F;weibo.com&#x2F;u&#x2F;5509464340" rel="noopener" target="_blank"><i class="fab fa-weibo fa-fw"></i>微博</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://yellowstar5.cn/atom.xml" title="RSS → https:&#x2F;&#x2F;yellowstar5.cn&#x2F;atom.xml"><i class="fa fa-rss-square fa-fw"></i>RSS</a>
+      </span>
+  </div>
+
+
+
+        </section>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="yellowstar5.cn/JSR-133-FAQ-%E4%B8%AD%E8%8B%B1%E5%AF%B9%E7%85%A7%E7%89%88/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="YellowStar5">
+      <meta itemprop="description" content="Java后端程序员，想做个手艺人。">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="YellowStar5">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          JSR-133 FAQ 中英对照版翻译
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2020-08-31 10:43:17" itemprop="dateCreated datePublished" datetime="2020-08-31T10:43:17+08:00">2020-08-31</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020-09-14 14:43:55" itemprop="dateModified" datetime="2020-09-14T14:43:55+08:00">2020-09-14</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/JUC/" itemprop="url" rel="index"><span itemprop="name">JUC</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p><strong>由于本人能力有限，如有错误，欢迎指出。</strong><br><a target="_blank" rel="noopener" href="https://www.cs.umd.edu/~pugh/java/memoryModel/jsr-133-faq.html">原文地址</a>：<a target="_blank" rel="noopener" href="https://www.cs.umd.edu/~pugh/java/memoryModel/jsr-133-faq.html">https://www.cs.umd.edu/~pugh/java/memoryModel/jsr-133-faq.html</a><br><a href="https://yellowstar5.cn/direct/jsr-133-faq-chinese.html">如果你喜欢原文那种板式的话，可以看这个</a>：<a href="https://yellowstar5.cn/direct/jsr-133-faq-chinese.html">https://yellowstar5.cn/direct/jsr-133-faq-chinese.html</a></p>
+<h3 id="What-is-a-memory-model-anyway-无论如何，什么是内存模型？"><a href="#What-is-a-memory-model-anyway-无论如何，什么是内存模型？" class="headerlink" title="What is a memory model, anyway? (无论如何，什么是内存模型？)"></a>What is a memory model, anyway? (无论如何，什么是内存模型？)</h3><p>In multiprocessor systems, processors generally have one or more layers of memory cache, which improves performance both by speeding access to data (because the data is closer to the processor) and reducing traffic on the shared memory bus (because many memory operations can be satisfied by local caches.) Memory caches can improve performance tremendously, but they present a host of new challenges. What, for example, happens when two processors examine the same memory location at the same time? Under what conditions will they see the same value?</p>
+<p>在多处理器系统中，处理器通常具有一层或多层内存高速缓存， 这可以通过加快对数据的访问速度 (因为数据更靠近处理器) 和减少共享内存总线上的通信量 (因为本地缓存可以满足许多内存操作。)来提高性能。内存缓存可以极大地提高性能，但是它们带来了许多新的挑战。 例如，当两个处理器同时检查相同的内存位置时会发生什么？ 他们将在什么条件下看到相同的价值？</p>
+<p>At the processor level, a memory model defines necessary and sufficient conditions for knowing that writes to memory by other processors are visible to the current processor, and writes by the current processor are visible to other processors. Some processors exhibit a strong memory model, where all processors see exactly the same value for any given memory location at all times. Other processors exhibit a weaker memory model, where special instructions, called memory barriers, are required to flush or invalidate the local processor cache in order to see writes made by other processors or make writes by this processor visible to others. These memory barriers are usually performed when lock and unlock actions are taken; they are invisible to programmers in a high level language.</p>
+<p>在处理器级别，内存模型定义了必要条件和充分条件，以便知道其他处理器对内存的写操作对当前处理器可见，和当前处理器的写操作对其他处理器可见。 一些处理器表现出强大的内存模型，其中所有处理器始终在任何给定的内存位置看到完全相同的值。 其他处理器表现出较弱的内存模型，其中需要特殊的指令（称为内存屏障）来刷新或使本地处理器缓存无效， 以便该本地处理器看到其他处理器做出的写入或使该处理器的写入对其他处理器可见。 这些内存屏障通常在执行锁定和解锁操作时执行； 使用高级语言的程序员看不到它们。</p>
+<a id="more"></a>
+
+<p>It can sometimes be easier to write programs for strong memory models, because of the reduced need for memory barriers. However, even on some of the strongest memory models, memory barriers are often necessary; quite frequently their placement is counterintuitive. Recent trends in processor design have encouraged weaker memory models, because the relaxations they make for cache consistency allow for greater scalability across multiple processors and larger amounts of memory.</p>
+<p>有时为强大的内存模型编写程序可能会更容易，因为减少了对内存屏障的需求。 但是，即使在某些最强大的内存模型上，也经常需要使用内存屏障。 它们的放置经常违反直觉。 处理器设计的最新趋势鼓励使用较弱的内存模型，因为它们对高速缓存一致性的放宽允许跨多个处理器的更大可伸缩性和更大的内存量。</p>
+<p>The issue of when a write becomes visible to another thread is compounded by the compiler’s reordering of code. For example, the compiler might decide that it is more efficient to move a write operation later in the program; as long as this code motion does not change the program’s semantics, it is free to do so.  If a compiler defers an operation, another thread will not see it until it is performed; this mirrors the effect of caching.</p>
+<p>关于何时一个写操作对另一个线程可见的问题被编译器对代码的重新序复杂化了。 例如，编译器可能认为把写操作移到程序的后面会更有效;只要这个代码移动不改变程序的语义，编译器可以自由地这样做。  如果一个编译器延迟了一个操作，另一个线程将看不到它，直到它被执行;这反映了缓存的效果</p>
+<p>Moreover, writes to memory can be moved earlier in a program; in this case, other threads might see a write before it actually “occurs” in the program.  All of this flexibility is by design – by giving the compiler, runtime, or hardware the flexibility to execute operations in the optimal order, within the bounds of the memory model, we can achieve higher performance.</p>
+<p>此外，写入内存的操作可以在程序中被提前移动; 在这种情况下，其他线程可能会在该操作在程序中实际“发生”之前看到该操作。  所有这些灵活性都是设计出来的 —— 通过在内存模型的范围内给编译器、运行时或硬件灵活性以最佳顺序执行操作，我们可以实现更高的性能。</p>
+<p>A simple example of this can be seen in the following code:</p>
+<p>一个简单的例子可以在下面的代码中看到：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">Class Reordering &#123;</span><br><span class="line">  <span class="keyword">int</span> x = <span class="number">0</span>, y = <span class="number">0</span>;</span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">writer</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    x = <span class="number">1</span>;</span><br><span class="line">    y = <span class="number">2</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">reader</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> r1 = y;</span><br><span class="line">    <span class="keyword">int</span> r2 = x;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Let’s say that this code is executed in two threads concurrently, and the read of y sees the value 2. Because this write came after the write to x, the programmer might assume that the read of x must see the value 1. However, the writes may have been reordered. If this takes place, then the write to y could happen, the reads of both variables could follow, and then the write to x could take place. The result would be that r1 has the value 2, but r2 has the value 0.</p>
+<p>假设此代码是在两个线程中同时执行的，而 y 的读取将看到值 2 。 由于此写入是在写入 x 之后完成的，因此程序员可能会认为 x 的读取必须看到值 1 。但是，写入可能已被重排序。 如果发生这种情况，则可能发生对 y 的写入，随后是两个变量的读取，然后可能发生对x的写入。 结果将是r1的值为2，而r2的值为0。</p>
+<p>The Java Memory Model describes what behaviors are legal in multithreaded code, and how threads may interact through memory. It describes the relationship between variables in a program and the low-level details of storing and retrieving them to and from memory or registers in a real computer system. It does this in a way that can be implemented correctly using a wide variety of hardware and a wide variety of compiler optimizations.</p>
+<p>Java 内存模型描述了多线程代码中哪些行为是合法的，以及线程如何通过内存进行交互。 它描述了程序中的变量与在真实计算机系统中的存储器或寄存器进行存储和获取变量的底层细节之间的关系。 它以这样一种方式来实现上面要求，该方式使用各种硬件和各种编译器优化来正确实现。</p>
+<p>Java includes several language constructs, including volatile, final, and synchronized, which are intended to help the programmer describe a program’s concurrency requirements to the compiler. The Java Memory Model defines the behavior of volatile and synchronized, and, more importantly, ensures that a correctly synchronized Java program runs correctly on all processor architectures.</p>
+<p>Java 包括几种语言结构，包括 volatile，final 和 synchronized， 旨在帮助程序员向编译器描述程序的并发要求。 Java 内存模型定义了 volatile 和 synchronized 的行为， 并且更重要的是，确保正确同步的 Java 程序可以在所有处理器体系结构上正确运行。</p>
+<h3 id="Do-other-languages-like-C-have-a-memory-model-其他语言（例如-C-）是否具有内存模型？"><a href="#Do-other-languages-like-C-have-a-memory-model-其他语言（例如-C-）是否具有内存模型？" class="headerlink" title="Do other languages, like C++, have a memory model? (其他语言（例如 C++）是否具有内存模型？)"></a>Do other languages, like C++, have a memory model? (其他语言（例如 C++）是否具有内存模型？)</h3><p>Most other programming languages, such as C and C++, were not designed with direct support for multithreading. The protections that these languages offer against the kinds of reorderings that take place in compilers and architectures are heavily dependent on the guarantees provided by the threading libraries used (such as pthreads), the compiler used, and the platform on which the code is run.  </p>
+<p>大多数其他编程语言，比如 C 和 C++，在设计时并没有直接支持多线程。 这些语言对发生在编译器和体系结构中的各种重排序所提供的保护在很大程度上依赖于所使用的线程库(例如 pthreads )、 所使用的编译器和运行代码的平台所提供的保证  </p>
+<h3 id="What-is-JSR-133-about-JSR-133是关于什么的？"><a href="#What-is-JSR-133-about-JSR-133是关于什么的？" class="headerlink" title="What is JSR 133 about? (JSR 133是关于什么的？)"></a>What is JSR 133 about? (JSR 133是关于什么的？)</h3><p>Since 1997, several serious flaws have been discovered in the Java Memory Model as defined in Chapter 17 of the Java Language Specification. These flaws allowed for confusing behaviors (such as final fields being observed to change their value) and undermined the compiler’s ability to perform common optimizations.</p>
+<p>自 1997 年以来，在 Java 语言规范第 17 章定义的 Java 内存模型中发现了几个严重的缺陷。这些缺陷导致了令人困惑的行为(比如 final 字段被观察到更改了它们的值)， 并且破坏了编译器执行常见优化的能力。</p>
+<p>The Java Memory Model was an ambitious undertaking; it was the first time that a programming language specification attempted to incorporate a memory model which could provide consistent semantics for concurrency across a variety of architectures. Unfortunately, defining a memory model which is both consistent and intuitive proved far more difficult than expected. JSR 133 defines a new memory model for the Java language which fixes the flaws of the earlier memory model. In order to do this, the semantics of final and volatile needed to change.</p>
+<p>Java 内存模型是一个雄心勃勃的事业。 这是编程语言规范首次尝试纳入一种内存模型，该模型可以为各种体系结构中的并发提供一致的语义。 不幸的是，事实证明，定义一个既一致又直观的内存模型比预期的要困难得多。 JSR 133 为 Java 语言定义了一种新的内存模型，该模型修复了早期内存模型的缺陷。 为此，需要更改 final 和 volatile 的语义。</p>
+<p>The full semantics are available at <a target="_blank" rel="noopener" href="http://www.cs.umd.edu/users/pugh/java/memoryModel">http://www.cs.umd.edu/users/pugh/java/memoryModel</a>, but the formal semantics are not for the timid. It is surprising, and sobering, to discover how complicated seemingly simple concepts like synchronization really are. Fortunately, you need not understand the details of the formal semantics – the goal of JSR 133 was to create a set of formal semantics that provides an intuitive framework for how volatile, synchronized, and final work.</p>
+<p>完整的语义可以在<a target="_blank" rel="noopener" href="http://www.cs.umd.edu/users/pugh/java/memoryModel"> http://www.cs.umd.edu/users/pugh/java/memoryModel </a>可获得，但是形式上的语义并不适合胆小者。 发现同步之类的看似简单的概念到底有多复杂，这是令人惊讶且发人深省的。 幸运的是，你不需要了解形式语义的详细信息 —— JSR 133 的目标是创建一组形式语义，以提供直观的框架来说明 volatile，synchronized 和 final 是如何工作的。</p>
+<p>The goals of JSR 133 include:</p>
+<p>JSR 133的目标包括:</p>
+<ul>
+<li><p>Preserving existing safety guarantees, like type-safety, and strengthening others. For example, variable values may not be created “out of thin air”: each value for a variable observed by some thread must be a value that can reasonably be placed there by some thread.<br>保留现有的安全保证，例如类型安全，并加强其他安全保证。 例如，可能不会“凭空”创建变量值：某个线程观察到的变量的每个值必须是某个线程可以合理放置在其中的值。</p>
+</li>
+<li><p>The semantics of correctly synchronized programs should be as simple and intuitive as possible.<br>正确同步的程序的语义应尽可能简单直观。</p>
+</li>
+<li><p>The semantics of incompletely or incorrectly synchronized programs should be defined so that potential security hazards are minimized.<br>不完整或不正确同步的程序的语义应该被定义，以使潜在的安全隐患最小化。</p>
+</li>
+<li><p>Programmers should be able to reason confidently about how multithreaded programs interact with memory.<br>程序员应该能够自信地推断出多线程程序如何与内存交互。</p>
+</li>
+<li><p>It should be possible to design correct, high performance JVM implementations across a wide range of popular hardware architectures.<br>应该有可能在广泛的流行硬件体系结构中设计正确的高性能 JVM 实现。</p>
+</li>
+<li><p>A new guarantee of initialization safety should be provided. If an object is properly constructed (which means that references to it do not escape during construction), then all threads which see a reference to that object will also see the values for its final fields that were set in the constructor, without the need for synchronization.<br>应该提供初始化安全性的新保证。 如果正确构造了一个对象（这意味着对该对象的引用在构造期间不会逸出）， 则所有看到对该对象的引用的线程也将看到在构造函数中设置的其 final 字段的值，而无需同步。</p>
+</li>
+<li><p>There should be minimal impact on existing code.<br>对现有代码的影响应该最小。</p>
+</li>
+</ul>
+<h3 id="What-is-meant-by-reordering-重排序是什么意思？"><a href="#What-is-meant-by-reordering-重排序是什么意思？" class="headerlink" title="What is meant by reordering? (重排序是什么意思？)"></a>What is meant by reordering? (重排序是什么意思？)</h3><p>There are a number of cases in which accesses to program variables (object instance fields, class static fields, and array elements) may appear to execute in a different order than was specified by the program. The compiler is free to take liberties with the ordering of instructions in the name of optimization. Processors may execute instructions out of order under certain circumstances. Data may be moved between registers, processor caches, and main memory in different order than specified by the program.</p>
+<p>在许多情况下，对程序变量（对象实例字段，类静态字段和数组元素）的访问似乎以与程序指定顺序不同的顺序执行。 编译器以优化的名义自由地对指令进行排序。在某些情况下，处理器可能会无序地执行指令。 数据可能以与程序指定顺序不同的顺序在寄存器，处理器高速缓存和主存储器之间移动。</p>
+<p>For example, if a thread writes to field a and then to field b, and the value of b does not depend on the value of a, then the compiler is free to reorder these operations, and the cache is free to flush b to main memory before a. There are a number of potential sources of reordering, such as the compiler, the JIT, and the cache.</p>
+<p>例如，如果一个线程先写入字段 a，然后写入字段 b，并且 b 的值不取决于 a 的值， 则编译器可以自由地对这些操作进行重新排序， 并且高速缓存可以在 a 刷到主存之前，自由地将 b 刷到主存。 有许多潜在的重排序源头，例如编译器，JIT和缓存。</p>
+<p>The compiler, runtime, and hardware are supposed to conspire to create the illusion of as-if-serial semantics, which means that in a single-threaded program, the program should not be able to observe the effects of reorderings. However, reorderings can come into play in incorrectly synchronized multithreaded programs, where one thread is able to observe the effects of other threads, and may be able to detect that variable accesses become visible to other threads in a different order than executed or specified in the program.</p>
+<p>编译器、运行时和硬件应该合谋来制造 as-if-serial 语义的假象， 这意味着在单线程程序中，程序不应能够观察到重排序的效果。 但是，重排序可能会在不正确同步的多线程程序中发挥作用，在该程序中，一个线程能够观察其他线程的影响，并且可能能够检测到变量访问对其他线程可见的顺序与程序中执行或指定的顺序不同。</p>
+<p>Most of the time, one thread doesn’t care what the other is doing. But when it does, that’s what synchronization is for.</p>
+<p>大多数情况下，一个线程不在乎另一线程在做什么。但是，当它这样做时，那就是同步的目的。</p>
+<p>What was wrong with the old memory model? (旧的内存模型出了什么问题？)<br>There were several serious problems with the old memory model. It was difficult to understand, and therefore widely violated. For example, the old model did not, in many cases, allow the kinds of reorderings that took place in every JVM. This confusion about the implications of the old model was what compelled the formation of JSR-133.</p>
+<p>旧的内存模型存在几个严重的问题。 这很难理解，因此被广泛地违反了。 例如，在许多情况下，旧模型不允许在每个 JVM 中发生的那种重排序。 关于旧模型的含义的这种困惑迫使 JSR-133 的形成。</p>
+<p>One widely held belief, for example, was that if final fields were used, then synchronization between threads was unnecessary to guarantee another thread would see the value of the field. While this is a reasonable assumption and a sensible behavior, and indeed how we would want things to work, under the old memory model, it was simply not true. Nothing in the old memory model treated final fields differently from any other field – meaning synchronization was the only way to ensure that all threads see the value of a final field that was written by the constructor. As a result, it was possible for a thread to see the default value of the field, and then at some later time see its constructed value. This means, for example, that immutable objects like String can appear to change their value – a disturbing prospect indeed.</p>
+<p>例如，一个普遍持有的信念是，如果使用 final 字段，则为了确保另一个线程将看到该字段的值，在线程之间的同步是不必要的。 尽管这是一个合理的假设和明智的行为，甚至确实是我们希望事情运行的方式， 但在旧的内存模型下，事实并非如此。 在旧的内存模型中，final 字段与其他字段没有任何区别 —— 意味着同步是确保所有线程都能看到构造函数所写入的 final 字段值的唯一方法。 结果，线程有可能看到该字段的默认值，然后在以后的某个时间看到它的构造值。 例如，这意味着诸如 String 之类的不可变对象似乎可以改变其值 —— 这的确是一个令人不安的图景。</p>
+<p>The old memory model allowed for volatile writes to be reordered with nonvolatile reads and writes, which was not consistent with most developers intuitions about volatile and therefore caused confusion.</p>
+<p>旧的内存模型允许将 volatile 写入与 nonvolatile 读写进行重排序， 这与大多数开发人员对 volatile 的直觉并不一致，因此引起了混乱。</p>
+<p>Finally, as we shall see, programmers’ intuitions about what can occur when their programs are incorrectly synchronized are often mistaken. One of the goals of JSR-133 is to call attention to this fact.</p>
+<p>最后，正如我们将要看到的，程序员对于当程序同步不正确时可能会发生什么的直觉通常是错误的。 JSR-133 的目标之一是引起人们对这一事实的关注。</p>
+<h3 id="What-do-you-mean-by-incorrectly-synchronized-你所说的错误同步是什么意思？"><a href="#What-do-you-mean-by-incorrectly-synchronized-你所说的错误同步是什么意思？" class="headerlink" title="What do you mean by incorrectly synchronized? (你所说的错误同步是什么意思？)"></a>What do you mean by incorrectly synchronized? (你所说的错误同步是什么意思？)</h3><p>Incorrectly synchronized code can mean different things to different people. When we talk about incorrectly synchronized code in the context of the Java Memory Model, we mean any code where</p>
+<ol>
+<li>there is a write of a variable by one thread,</li>
+<li>there is a read of the same variable by another thread and</li>
+<li>the write and read are not ordered by synchronization</li>
+</ol>
+<p>错误同步的代码对不同的人可能意味着不同的意思。 当我们在 Java 内存模型的上下文中谈论错误同步的代码时， 我们指的是任何代码，其中</p>
+<ol>
+<li>一个线程写了一个变量，</li>
+<li>另一个线程读取了相同的变量，并且</li>
+<li>写入和读取未按同步排序</li>
+</ol>
+<p>When these rules are violated, we say we have a data race on that variable. A program with a data race is an incorrectly synchronized program.</p>
+<p>当这些规则被违反时，我们说我们在这个变量上有一个 数据竞争 。 一个有数据竞争的程序是一个没有正确同步的程序。</p>
+<h3 id="What-does-synchronization-do-同步有什么作用？"><a href="#What-does-synchronization-do-同步有什么作用？" class="headerlink" title="What does synchronization do? (同步有什么作用？)"></a>What does synchronization do? (同步有什么作用？)</h3><p>Synchronization has several aspects. The most well-understood is mutual exclusion – only one thread can hold a monitor at once, so synchronizing on a monitor means that once one thread enters a synchronized block protected by a monitor, no other thread can enter a block protected by that monitor until the first thread exits the synchronized block.</p>
+<p>同步有几个方面。最容易理解的是互斥 —— 只有一个线程可以立即持有一个监视器，因此在监视器上进行同步意味着一旦一个线程进入由一个监视器保护的同步块，则其他线程都不能进入该监视器保护的块，直到第一个线程退出同步块。</p>
+<p>But there is more to synchronization than mutual exclusion. Synchronization ensures that memory writes by a thread before or during a synchronized block are made visible in a predictable manner to other threads which synchronize on the same monitor. After we exit a synchronized block, we <strong>release</strong> the monitor, which has the effect of flushing the cache to main memory, so that writes made by this thread can be visible to other threads. Before we can enter a synchronized block, we <strong>acquire</strong> the monitor, which has the effect of invalidating the local processor cache so that variables will be reloaded from main memory. We will then be able to see all of the writes made visible by the previous release.</p>
+<p>但是同步不仅仅是互斥。 同步确保以可预见的方式，使线程在同步块之前或期间对内存的写入对于在同一监视器上同步的其他线程可见。 退出同步块后，我们 <strong>释放</strong> 该监视器，其有将缓存刷新到主内存的效果， 以便该线程进行的写入对于其他线程可见。 在我们进入一个同步块之前，我们需要 <strong>获取</strong> 该监视器，该监视器具有使本地处理器缓存无效的作用，以便可以从主内存中重新加载变量。 然后，我们将能够看到以前释放中所有可见的写入。</p>
+<p>Discussing this in terms of caches, it may sound as if these issues only affect multiprocessor machines. However, the reordering effects can be easily seen on a single processor. It is not possible, for example, for the compiler to move your code before an acquire or after a release. When we say that acquires and releases act on caches, we are using shorthand for a number of possible effects.</p>
+<p>从高速缓存的角度进行讨论，听起来似乎这些问题仅影响多处理器计算机。 但是，重排序效果可以在单个处理器上轻松看到。 例如，编译器不可能在获取之前或释放之后移动代码。 当我们说获取和释放作用于缓存时，我们使用简写来表示多种可能的影响。</p>
+<p>The new memory model semantics create a partial ordering on memory operations (read field, write field, lock, unlock) and other thread operations (start and join), where some actions are said to happen before other operations. When one action happens before another, the first is guaranteed to be ordered before and visible to the second. The rules of this ordering are as follows:</p>
+<p>新的内存模型语义在内存操作（读字段，写字段，锁定，解锁）和其他线程操作（ start 和 join ）上创建了部分排序，其中某些操作据说 <em>happen before</em> 其他操作。 当一个动作在另一个动作之前发生时，第一个动作被确保排序在第二个动作之前并且对于第二个动作可见。 此排序规则如下：</p>
+<ul>
+<li><p>Each action in a thread happens before every action in that thread that comes later in the program’s order.<br>线程中的每个动作先于该线程中的在程序顺序上后出现的每个动作发生。</p>
+</li>
+<li><p>An unlock on a monitor happens before every subsequent lock on that same monitor.<br>监视器上的一个解锁发生在 同一个 监视器上的每个后续锁定之前。</p>
+</li>
+<li><p>A write to a volatile field happens before every subsequent read of that same volatile.<br>对 volatile 字段的每个写操作发生在每次后续读取 同一个 volatile之前。</p>
+</li>
+<li><p>A call to start() on a thread happens before any actions in the started thread.<br>一个对线程的 start() 的调用发生在被启动线程中的任何操作之前。</p>
+</li>
+<li><p>All actions in a thread happen before any other thread successfully returns from a join() on that thread.<br>线程中的所有操作发生在其他线程成功从该线程上的 join() 返回之前。</p>
+</li>
+</ul>
+<p>This means that any memory operations which were visible to a thread before exiting a synchronized block are visible to any thread after it enters a synchronized block protected by the same monitor, since all the memory operations happen before the release, and the release happens before the acquire.</p>
+<p>这意味着线程在退出同步块之前对一个线程可见的任何内存操作，在进入受同一监视器保护的同步块之后对于任何线程都是可见的，因为所有内存操作都发生在释放之前，而释放发生在获取之前。</p>
+<p>Another implication is that the following pattern, which some people use to force a memory barrier, doesn’t work:</p>
+<p>另一个含义是，某些人用来强制执行内存屏障的以下模式不起作用：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">synchronized</span> (<span class="keyword">new</span> Object()) &#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>This is actually a no-op, and your compiler can remove it entirely, because the compiler knows that no other thread will synchronize on the same monitor. You have to set up a happens-before relationship for one thread to see the results of another.</p>
+<p>这实际上是一个 no-op， 你的编译器可以完全删除它，因为编译器知道没有其他线程可以在同一监视器上同步。 你必须为一个线程设置一个 happens-before 关系，才能查看另一个线程的结果。</p>
+<p><strong>Important Note:</strong> Note that it is important for both threads to synchronize on the same monitor in order to set up the happens-before relationship properly. It is not the case that everything visible to thread A when it synchronizes on object X becomes visible to thread B after it synchronizes on object Y. The release and acquire have to “match” (i.e., be performed on the same monitor) to have the right semantics. Otherwise, the code has a data race.</p>
+<p><strong>重要说明：</strong> 请注意，两个线程必须在同一监视器上同步，以便正确设置 happens-before 关系。 当线程A在对象X上同步时，对于线程A可见的所有东西，在线程B在对象y上同步后都是可见的，并不是这样的。释放和获取必须“匹配”（即，在同一监视器上执行）才能具有正确的语义。否则，代码将发生数据争用。</p>
+<h3 id="How-can-final-fields-appear-to-change-their-values-final-字段如何改变-他们的值？"><a href="#How-can-final-fields-appear-to-change-their-values-final-字段如何改变-他们的值？" class="headerlink" title="How can final fields appear to change their values? (final 字段如何改变 他们的值？)"></a>How can final fields appear to change their values? (final 字段如何改变 他们的值？)</h3><p>One of the best examples of how final fields’ values can be seen to change involves one particular implementation of the String class.</p>
+<p>关于如何看待 final 字段值更改的最佳示例之一涉及 String 类的一种特定实现。</p>
+<p>A String can be implemented as an object with three fields – a character array, an offset into that array, and a length. The rationale for implementing String this way, instead of having only the character array, is that it lets multiple String and StringBuffer objects share the same character array and avoid additional object allocation and copying. So, for example, the method String.substring() can be implemented by creating a new string which shares the same character array with the original String and merely differs in the length and offset fields. For a String, these fields are all final fields.</p>
+<p>一个 String 可以实现为具有三个字段的对象 —— 一个字符数组，该数组的偏移量和长度。 以这种方式实现 String 的原理，而不是仅拥有字符数组，是因为它允许多个 String 和 StringBuffer 对象共享同一字符数组，并避免了额外的对象分配和复制。 因此，例如，可以通过创建一个新字符串来实现 String.substring() 方法，该新字符串与原始 String 共享相同的字符数组，并且仅仅在长度和偏移量字段方面不同。 对于一个 String，这些字段都是 final 字段。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">String s1 = <span class="string">&quot;/usr/tmp&quot;</span>;</span><br><span class="line">String s2 = s1.substring(<span class="number">4</span>); </span><br></pre></td></tr></table></figure>
+
+<p>The string s2 will have an offset of 4 and a length of 4. But, under the old model, it was possible for another thread to see the offset as having the default value of 0, and then later see the correct value of 4, it will appear as if the string “/usr” changes to “/tmp”.</p>
+<p>字符串 s2 的偏移量为 4，长度为 4。但是，在旧模型下，另一个线程可能会将偏移量视为默认值 0，然后再看到正确的值 4，这样看起来就像字符串 “/usr” 更改为 “/tmp” 一样。</p>
+<p>The original Java Memory Model allowed this behavior; several JVMs have exhibited this behavior. The new Java Memory Model makes this illegal.</p>
+<p>原始的Java内存模型允许这种行为。 一些JVM已经表现出了这种行为。 新的Java内存模型使此操作非法。</p>
+<h3 id="How-do-final-fields-work-under-the-new-JMM-在新的-JMM-下-final-字段如何工作？"><a href="#How-do-final-fields-work-under-the-new-JMM-在新的-JMM-下-final-字段如何工作？" class="headerlink" title="How do final fields work under the new JMM? (在新的 JMM 下 final 字段如何工作？)"></a>How do final fields work under the new JMM? (在新的 JMM 下 final 字段如何工作？)</h3><p>The values for an object’s final fields are set in its constructor. Assuming the object is constructed “correctly”, once an object is constructed, the values assigned to the final fields in the constructor will be visible to all other threads without synchronization. In addition, the visible values for any other object or array referenced by those final fields will be at least as up-to-date as the final fields.</p>
+<p>对象 final 字段的值在其构造函数中设置。 假设对象是“正确”构造的，则一旦构造了对象，分配给构造函数中 final 字段的值将对所有其他线程可见，而无需同步。 另外，那些 final 字段引用的任何其他对象或数组的可见值，将至少与 final 字段一样最新。</p>
+<p>What does it mean for an object to be properly constructed? It simply means that no reference to the object being constructed is allowed to “escape” during construction. (See <a target="_blank" rel="noopener" href="http://www-106.ibm.com/developerworks/java/library/j-jtp0618.html">Safe Construction Techniques</a> for examples.)  In other words, do not place a reference to the object being constructed anywhere where another thread might be able to see it; do not assign it to a static field, do not register it as a listener with any other object, and so on. These tasks should be done after the constructor completes, not in the constructor.</p>
+<p>一个对象被正确构造意味着什么? 它只是意味着在构造期间不允许对正在构造的对象的引用”逃逸”。 （请参阅 <a target="_blank" rel="noopener" href="http://www-106.ibm.com/developerworks/java/library/j-jtp0618.html">Safe Construction Techniques</a> 查看示例。） 换句话说，请勿在其他线程可能看到的地方放置对正在构造的对象的引用； 不要将其分配给静态字段，不要将其注册为任何其他对象的 listener，依此类推。 这些任务应在构造函数完成之后而不是在构造函数中去做。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">FinalFieldExample</span> </span>&#123;</span><br><span class="line">  <span class="keyword">final</span> <span class="keyword">int</span> x;</span><br><span class="line">  <span class="keyword">int</span> y;</span><br><span class="line">  <span class="keyword">static</span> FinalFieldExample f;</span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="title">FinalFieldExample</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    x = <span class="number">3</span>;</span><br><span class="line">    y = <span class="number">4</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">writer</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    f = <span class="keyword">new</span> FinalFieldExample();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">reader</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (f != <span class="keyword">null</span>) &#123;</span><br><span class="line">      <span class="keyword">int</span> i = f.x;</span><br><span class="line">      <span class="keyword">int</span> j = f.y;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The class above is an example of how final fields should be used. A thread executing reader is guaranteed to see the value 3 for f.x, because it is final. It is not guaranteed to see the value 4 for y, because it is not final. If FinalFieldExample’s constructor looked like this:</p>
+<p>上面的类是如何使用 final 字段的示例。 一个执行 reader 的线程被保证可以看到 f.x 的值 3，因为它是 final。 不能保证 y 的值为 4，因为它不是 final。 如果 FinalFieldExample 的构造函数如下所示：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">FinalFieldExample</span><span class="params">()</span> </span>&#123; <span class="comment">// bad!</span></span><br><span class="line">  x = <span class="number">3</span>;</span><br><span class="line">  y = <span class="number">4</span>;</span><br><span class="line">  <span class="comment">// bad construction - allowing this to escape</span></span><br><span class="line">  global.obj = <span class="keyword">this</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>then threads that read the reference to this from global.obj are not guaranteed to see 3 for x.</p>
+<p>然后，不能保证从 global.obj 读取对 this 的引用的线程看到 x 的值为 3。</p>
+<p>The ability to see the correctly constructed value for the field is nice, but if the field itself is a reference, then you also want your code to see the up to date values for the object (or array) to which it points. If your field is a final field, this is also guaranteed. So, you can have a final pointer to an array and not have to worry about other threads seeing the correct values for the array reference, but incorrect values for the contents of the array. Again, by “correct” here, we mean “up to date as of the end of the object’s constructor”, not “the latest value available”.</p>
+<p>查看字段的正确构造值的能力很好，但是如果字段本身是引用， 那么你还希望代码查看其指向的对象（或数组）的最新值。 如果你的字段是一个 final 字段，那么这也被保证了。 因此，你可以有一个指向数组的 final 指针，而不必担心其他线程会看到该数组引用的正确值，但是看到该数组内容的错误值。 再一次地，这里的“正确”是指“截至对象构造函数结束时的最新值”，而不是“可用的最新值”。</p>
+<p>Now, having said all of this, if, after a thread constructs an immutable object (that is, an object that only contains final fields), you want to ensure that it is seen correctly by all of the other thread, you still typically need to use synchronization. There is no other way to ensure, for example, that the reference to the immutable object will be seen by the second thread. The guarantees the program gets from final fields should be carefully tempered with a deep and careful understanding of how concurrency is managed in your code.</p>
+<p>综上所述，如果在线程构造了一个不可变对象（即仅包含 final 字段的对象）之后， 你想要确保所有其他线程都能正确看到该对象，则通常仍然需要使用同步。 没有其他方法可以确保，例如，第二个线程将看到对不可变对象的引用。 程序从 final 字段获得的保证应该在深入和仔细理解代码中如何管理并发性的基础上加以调整。</p>
+<p>There is no defined behavior if you want to use JNI to change final fields.</p>
+<p>如果要使用 JNI 更改 final 字段，则没有定义的行为。</p>
+<h3 id="What-does-volatile-do-volatile-有什么作用？"><a href="#What-does-volatile-do-volatile-有什么作用？" class="headerlink" title="What does volatile do? (volatile 有什么作用？)"></a>What does volatile do? (volatile 有什么作用？)</h3><p>Volatile fields are special fields which are used for communicating state between threads. Each read of a volatile will see the last write to that volatile by any thread; in effect, they are designated by the programmer as fields for which it is never acceptable to see a “stale” value as a result of caching or reordering. The compiler and runtime are prohibited from allocating them in registers. They must also ensure that after they are written, they are flushed out of the cache to main memory, so they can immediately become visible to other threads. Similarly, before a volatile field is read, the cache must be invalidated so that the value in main memory, not the local processor cache, is the one seen. There are also additional restrictions on reordering accesses to volatile variables.</p>
+<p>Volatile 字段是用于在线程之间传递状态的特殊字段。 每次读取 volatile 时，都会看到由任一线程对该 volatile 的最后一次写入； 实际上，程序员将它们指定为无法接受由于缓存或重排序而导致的“过时”值的字段。 禁止编译器和运行时在寄存器中分配它们。 它们还必须确保在写入后将其从缓存中刷新到主存，以便它们可以立即对其他线程可见。 同样，在读取一个 volatile 字段之前，必须使高速缓存无效，以便可以看到主存储器中的值而不是本地处理器高速缓存中的值。 在重排列对 volatile 变量的访问方面还存在其他限制。</p>
+<p>Under the old memory model, accesses to volatile variables could not be reordered with each other, but they could be reordered with nonvolatile variable accesses. This undermined the usefulness of volatile fields as a means of signaling conditions from one thread to another.</p>
+<p>在旧的内存模型下， 对 volatile 变量的访问不能相互重排序，但可以与 nonvolatile 变量进行重排序。 这破坏了 volatile 字段作为从一个线程到另一个线程发条件信号的一种手段。</p>
+<p>Under the new memory model, it is still true that volatile variables cannot be reordered with each other. The difference is that it is now no longer so easy to reorder normal field accesses around them. Writing to a volatile field has the same memory effect as a monitor release, and reading from a volatile field has the same memory effect as a monitor acquire. In effect, because the new memory model places stricter constraints on reordering of volatile field accesses with other field accesses, volatile or not, anything that was visible to thread A when it writes to volatile field f becomes visible to thread B when it reads f.</p>
+<p>在新的内存模型下，volatile 变量不能相互重新排序仍然是正确的。 区别在于，现在对它们周围的普通字段访问进行重排序不再那么容易了。 对一个 volatile 字段的写入具有与监视器释放相同的内存效果， 而从一个 volatile 字段读取具有与监视器获取相同的内存效果。 实际上，由于新的内存模型对 volatile 字段访问与其他字段访问（无论是否为 volatile）的重排序施加了更严格的约束， 因此当线程 A 写入 volatile 字段 f 时，对线程 A 可见的任何内容，在读取 f 时对线程 B 可见。</p>
+<p>Here is a simple example of how volatile fields can be used:</p>
+<p>这是一个如何使用 volatile 字段的简单示例：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">VolatileExample</span> </span>&#123;</span><br><span class="line">  <span class="keyword">int</span> x = <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">volatile</span> <span class="keyword">boolean</span> v = <span class="keyword">false</span>;</span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">writer</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    x = <span class="number">42</span>;</span><br><span class="line">    v = <span class="keyword">true</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">reader</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (v == <span class="keyword">true</span>) &#123;</span><br><span class="line">      <span class="comment">//uses x - guaranteed to see 42.</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Assume that one thread is calling writer, and another is calling reader. The write to v in writer releases the write to x to memory, and the read of v acquires that value from memory. Thus, if the reader sees the value true for v, it is also guaranteed to see the write to 42 that happened before it. This would not have been true under the old memory model.  If v were not volatile, then the compiler could reorder the writes in writer, and reader’s read of x might see 0.</p>
+<p>假设一个线程在调用 writer，而另一个线程在调用 reader。 在 writer 中对 v 的写操作会将对 x 的写操作释放到内存中， 而对 v 的读操作则从内存中获取该值。 因此，如果 reader 看到 v 的值为 true，则也可以保证看到在它之前发生的对 42 的写入。 在旧的内存模型下，情况并非如此。   如果 v 不是 volatile，则编译器可以重排序 writer 中的写入，而reader 对 x 的读取可能会看到 0。</p>
+<p>Effectively, the semantics of volatile have been strengthened substantially, almost to the level of synchronization. Each read or write of a volatile field acts like “half” a synchronization, for purposes of visibility.</p>
+<p>有效地，volatile 的语义已得到实质性增强，几乎达到了同步的水平。 出于可见性目的，对 volatile 字段的每次读取或写入都类似于“半”同步。</p>
+<p><strong>Important Note:</strong> Note that it is important for both threads to access the same volatile variable in order to properly set up the happens-before relationship. It is not the case that everything visible to thread A when it writes volatile field f becomes visible to thread B after it reads volatile field g. The release and acquire have to “match” (i.e., be performed on the same volatile field) to have the right semantics.</p>
+<p><strong>重要说明：</strong> 请注意，两个线程访问同一个 volatile 变量很重要，以便正确设置 happens-before 关系。 情况并非如此，当线程 A 写入 volatile 字段f时，对线程 A 可见的所有内容， 在线程 B 读取 volatile 字段 g 之后对线程 B 可见。 释放和获取必须“匹配”（即在相同的 volatile 字段上执行）以具有正确的语义。</p>
+<h3 id="Does-the-new-memory-model-fix-the-“double-checked-locking”-problem-新的内存模型是否可以解决“双重检查锁定”问题？"><a href="#Does-the-new-memory-model-fix-the-“double-checked-locking”-problem-新的内存模型是否可以解决“双重检查锁定”问题？" class="headerlink" title="Does the new memory model fix the “double-checked locking” problem? (新的内存模型是否可以解决“双重检查锁定”问题？)"></a>Does the new memory model fix the “double-checked locking” problem? (新的内存模型是否可以解决“双重检查锁定”问题？)</h3><p>The (infamous) double-checked locking idiom (also called the multithreaded singleton pattern) is a trick designed to support lazy initialization while avoiding the overhead of synchronization. In very early JVMs, synchronization was slow, and developers were eager to remove it – perhaps too eager. The double-checked locking idiom looks like this:</p>
+<p>（臭名昭著的）双重检查锁定习惯用法（也称为多线程单例模式）是一种技巧，旨在支持延迟初始化， 同时避免同步的开销。 在非常早期的 JVM 中，同步速度很慢，开发人员渴望删除同步 —— 也许太渴望了。 双重检查锁定习惯用法看起来像这样：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// double-checked-locking - don&#x27;t do this!</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> Something instance = <span class="keyword">null</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> Something <span class="title">getInstance</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (instance == <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">synchronized</span> (<span class="keyword">this</span>) &#123;</span><br><span class="line">      <span class="keyword">if</span> (instance == <span class="keyword">null</span>)</span><br><span class="line">        instance = <span class="keyword">new</span> Something();</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> instance;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>This looks awfully clever – the synchronization is avoided on the common code path. There’s only one problem with it – <strong>it doesn’t work</strong>. Why not? The most obvious reason is that the writes which initialize instance and the write to the instance field can be reordered by the compiler or the cache, which would have the effect of returning what appears to be a partially constructed Something. The result would be that we read an uninitialized object. There are lots of other reasons why this is wrong, and why algorithmic corrections to it are wrong. There is no way to fix it using the old Java memory model. More in-depth information can be found at <a target="_blank" rel="noopener" href="http://www.javaworld.com/jw-02-2001/jw-0209-double.html">Double-checked locking: Clever, but broken</a> and <a target="_blank" rel="noopener" href="http://www.cs.umd.edu/~pugh/java/memoryModel/DoubleCheckedLocking.html">The “Double Checked Locking is broken” declaration</a></p>
+<p>这看起来非常聪明 —— 在公共代码路径上避免了同步。 它只有一个问题 —— <strong>它不起作用</strong>。为什么不起作用？ 最明显的原因是，初始化 instance 的写操作和对 instance 字段的写操作可能被编译器或缓存重排序，这将具有返回似乎是部分构造的Something的效果。 结果将是我们读取了一个未初始化的对象。 还有很多其他原因说明为什么这是错误的，以及为什么对其进行算法校正是错误的。 无法使用旧的 Java 内存模型对其进行修复。 可以在 <a target="_blank" rel="noopener" href="http://www.javaworld.com/jw-02-2001/jw-0209-double.html"> Double-checked locking: Clever, but broken </a> 和<a target="_blank" rel="noopener" href="http://www.cs.umd.edu/~pugh/java/memoryModel/DoubleCheckedLocking.html"> The “Double Checked Locking is broken” declaration </a>中找到更深入的信息</p>
+<p>Many people assumed that the use of the volatile keyword would eliminate the problems that arise when trying to use the double-checked-locking pattern. In JVMs prior to 1.5, volatile would not ensure that it worked (your mileage may vary). Under the new memory model, making the instance field volatile will “fix” the problems with double-checked locking, because then there will be a happens-before relationship between the initialization of the Something by the constructing thread and the return of its value by the thread that reads it.</p>
+<p>许多人认为 volatile 关键字的使用可以消除尝试使用双重检查锁定模式时出现的问题。 在 1.5 之前的 JVM 中，volatile 将无法确保其正常工作（你的里程可能会有所不同）。 在新的内存模型下，使 instance 字段是 volatile 的将通过双重检查锁定来“解决”问题， 因为这样在构造线程对 Something 的初始化和读取它的线程返回它的值之间就会存在一个 happens-before 关系。</p>
+<p><del>However, for fans of double-checked locking (and we really hope there are none left), the news is still not good. The whole point of double-checked locking was to avoid the performance overhead of synchronization. Not only has brief synchronization gotten a LOT less expensive since the Java 1.0 days, but under the new memory model, the performance cost of using volatile goes up, almost to the level of the cost of synchronization. So there’s still no good reason to use double-checked-locking.</del>  Redacted – volatiles are cheap on most platforms.<br>已编辑 —— volatiles在大多数平台上都很便宜。</p>
+<p>Instead, use the Initialization On Demand Holder idiom, which is thread-safe and a lot easier to understand:</p>
+<p>相反，请使用“按需初始化持有者”惯用语，它是线程安全的，并且更容易理解：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">LazySomethingHolder</span> </span>&#123;</span><br><span class="line">  <span class="keyword">public</span> <span class="keyword">static</span> Something something = <span class="keyword">new</span> Something();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> Something <span class="title">getInstance</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> LazySomethingHolder.something;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>This code is guaranteed to be correct because of the initialization guarantees for static fields; if a field is set in a static initializer, it is guaranteed to be made visible, correctly, to any thread that accesses that class.<br>由于静态字段的初始化保证，因此可以保证该代码是正确的。 如果在一个静态初始化中设置了一个字段，则可以保证该字段对访问该类的任何线程正确可见。</p>
+<h3 id="What-if-I’m-writing-a-VM-如果我正在编写虚拟机怎么办？"><a href="#What-if-I’m-writing-a-VM-如果我正在编写虚拟机怎么办？" class="headerlink" title="What if I’m writing a VM? (如果我正在编写虚拟机怎么办？)"></a>What if I’m writing a VM? (如果我正在编写虚拟机怎么办？)</h3><p>You should look at <a target="_blank" rel="noopener" href="http://gee.cs.oswego.edu/dl/jmm/cookbook.html">http://gee.cs.oswego.edu/dl/jmm/cookbook.html</a> .<br>你应该看看 <a target="_blank" rel="noopener" href="http://gee.cs.oswego.edu/dl/jmm/cookbook.html">http://gee.cs.oswego.edu/dl/jmm/cookbook.html</a> 。</p>
+<h3 id="Why-should-I-care-我为什么要在乎？"><a href="#Why-should-I-care-我为什么要在乎？" class="headerlink" title="Why should I care? (我为什么要在乎？)"></a>Why should I care? (我为什么要在乎？)</h3><p>Why should you care? Concurrency bugs are very difficult to debug. They often don’t appear in testing, waiting instead until your program is run under heavy load, and are hard to reproduce and trap. You are much better off spending the extra effort ahead of time to ensure that your program is properly synchronized; while this is not easy, it’s a lot easier than trying to debug a badly synchronized application.</p>
+<p>你为什么要在乎呢？ 并发错误很难调试。 它们通常不会出现在测试中，而是等到你的程序在高负载下运行时出现，并且很难重现和捕获。 你最好提前花费额外的精力来确保程序正确同步； 尽管这并不容易，但比尝试调试同步不良的应用程序要容易得多。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Java/" rel="tag"># Java</a>
+              <a href="/tags/Java%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/" rel="tag"># Java内存模型</a>
+              <a href="/tags/JSR-133-FAQ/" rel="tag"># JSR-133 FAQ</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/The-JSR-133-Cookbook-for-Compiler-Writers-%E4%B8%AD%E8%8B%B1%E5%AF%B9%E7%85%A7%E7%89%88%E7%BF%BB%E8%AF%91/" rel="prev" title="The JSR-133 Cookbook for Compiler Writers 中英对照版翻译">
+                  <i class="fa fa-chevron-left"></i> The JSR-133 Cookbook for Compiler Writers 中英对照版翻译
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/Synchronization-%E4%B8%AD%E8%8B%B1%E6%96%87%E5%AF%B9%E7%85%A7%E7%BF%BB%E8%AF%91/" rel="next" title="Synchronization 中英文对照翻译">
+                  Synchronization 中英文对照翻译 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">YellowStar5</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : 'c7399bb9f366b510f657',
+      clientSecret: '952cfd3a5207d8ddfc497983491a1089cf2985c4',
+      repo        : 'gitalk',
+      owner       : 'codercuixin',
+      admin       : ['codercuixin'],
+      id          : 'e99ed40c1ebe9f1285d22f6aaed435cb',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

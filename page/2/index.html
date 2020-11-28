@@ -27,7 +27,7 @@
   <meta name="description" content="Java后端程序员，想做个手艺人。">
 <meta property="og:type" content="website">
 <meta property="og:title" content="YellowStar5">
-<meta property="og:url" content="yellowstar5.cn/index.html">
+<meta property="og:url" content="yellowstar5.cn/page/2/index.html">
 <meta property="og:site_name" content="YellowStar5">
 <meta property="og:description" content="Java后端程序员，想做个手艺人。">
 <meta property="og:locale" content="zh_CN">
@@ -39,7 +39,7 @@
 <meta name="twitter:card" content="summary">
 
 
-<link rel="canonical" href="yellowstar5.cn/">
+<link rel="canonical" href="yellowstar5.cn/page/2/">
 
 
 <script class="page-configurations">
@@ -257,7 +257,7 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="yellowstar5.cn/synchronized%E5%85%B3%E9%94%AE%E5%AD%97%E7%9A%84%E5%86%85%E5%AD%98%E8%AF%AD%E4%B9%89%E5%8F%8A%E5%AE%9E%E7%8E%B0/">
+    <link itemprop="mainEntityOfPage" href="yellowstar5.cn/volatile%E5%9F%9F%E7%9A%84%E8%AF%AD%E4%B9%89%E5%8F%8A%E5%85%B6%E5%AE%9E%E7%8E%B0/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -271,177 +271,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/synchronized%E5%85%B3%E9%94%AE%E5%AD%97%E7%9A%84%E5%86%85%E5%AD%98%E8%AF%AD%E4%B9%89%E5%8F%8A%E5%AE%9E%E7%8E%B0/" class="post-title-link" itemprop="url">synchronized关键字的内存语义及实现</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-      
-
-      <time title="创建时间：2020-09-05 17:03:04 / 修改时间：17:17:35" itemprop="dateCreated datePublished" datetime="2020-09-05T17:03:04+08:00">2020-09-05</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/JUC/" itemprop="url" rel="index"><span itemprop="name">JUC</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h2 id="1-同步的语义"><a href="#1-同步的语义" class="headerlink" title="1.同步的语义"></a>1.同步的语义</h2><p>下面的内容摘自<a href="https://yellowstar5.cn/direct/jsr-133-faq-chinese.html">JSR 133 FAQ</a>:</p>
-<blockquote>
-<p>Synchronization has several aspects. The most well-understood is mutual exclusion – only one thread can hold a monitor at once, so synchronizing on a monitor means that once one thread enters a synchronized block protected by a monitor, no other thread can enter a block protected by that monitor until the first thread exits the synchronized block.</p>
-</blockquote>
-<p>同步有几个方面。最容易理解的是<strong>互斥</strong> —— 只有一个线程可以立即持有一个监视器，因此在监视器上进行同步意味着一旦一个线程进入由一个监视器保护的同步块，则其他线程都不能进入该监视器保护的块，直到第一个线程退出同步块。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/synchronized%E5%85%B3%E9%94%AE%E5%AD%97%E7%9A%84%E5%86%85%E5%AD%98%E8%AF%AD%E4%B9%89%E5%8F%8A%E5%AE%9E%E7%8E%B0/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="yellowstar5.cn/Synchronization-%E4%B8%AD%E8%8B%B1%E6%96%87%E5%AF%B9%E7%85%A7%E7%BF%BB%E8%AF%91/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="YellowStar5">
-      <meta itemprop="description" content="Java后端程序员，想做个手艺人。">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="YellowStar5">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/Synchronization-%E4%B8%AD%E8%8B%B1%E6%96%87%E5%AF%B9%E7%85%A7%E7%BF%BB%E8%AF%91/" class="post-title-link" itemprop="url">Synchronization 中英文对照翻译</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-      
-
-      <time title="创建时间：2020-09-02 11:26:38 / 修改时间：11:29:11" itemprop="dateCreated datePublished" datetime="2020-09-02T11:26:38+08:00">2020-09-02</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/JUC/" itemprop="url" rel="index"><span itemprop="name">JUC</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p><strong>原文地址：<a target="_blank" rel="noopener" href="https://wiki.openjdk.java.net/display/HotSpot/Synchronization">https://wiki.openjdk.java.net/display/HotSpot/Synchronization</a></strong></p>
-<h3 id="Synchronization-and-Object-Locking-同步和对象锁定"><a href="#Synchronization-and-Object-Locking-同步和对象锁定" class="headerlink" title="Synchronization and Object Locking (同步和对象锁定)"></a>Synchronization and Object Locking (同步和对象锁定)</h3><p>One of the major strengths of the Java programming language is its built-in support for multi-threaded programs. An object that is shared between multiple threads can be locked in order to synchronize its access. Java provides primitives to designate critical code regions, which act on a shared object and which may be executed only by one thread at a time. The first thread that enters the region locks the shared object. When a second thread is about to enter the same region, it must wait until the first thread has unlocked the object again.</p>
-<p>Java 编程语言的主要优势之一是其对多线程程序的内置支持。 可以锁定在多个线程之间共享的对象，以便同步其访问。 Java 提供了用于指定关键代码区域的原语，这些关键代码区域作用于共享对象，并且可能一次只能由一个线程执行。 进入该区域的第一个线程将锁定共享对象。 当第二个线程即将进入同一区域时，它必须等待，直到第一个线程再次将对象解锁。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/Synchronization-%E4%B8%AD%E8%8B%B1%E6%96%87%E5%AF%B9%E7%85%A7%E7%BF%BB%E8%AF%91/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="yellowstar5.cn/JSR-133-FAQ-%E4%B8%AD%E8%8B%B1%E5%AF%B9%E7%85%A7%E7%89%88/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="YellowStar5">
-      <meta itemprop="description" content="Java后端程序员，想做个手艺人。">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="YellowStar5">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/JSR-133-FAQ-%E4%B8%AD%E8%8B%B1%E5%AF%B9%E7%85%A7%E7%89%88/" class="post-title-link" itemprop="url">JSR-133 FAQ 中英对照版翻译</a>
+            <a href="/volatile%E5%9F%9F%E7%9A%84%E8%AF%AD%E4%B9%89%E5%8F%8A%E5%85%B6%E5%AE%9E%E7%8E%B0/" class="post-title-link" itemprop="url">volatile域的语义及其实现</a>
         </h2>
 
         <div class="post-meta-container">
@@ -452,14 +282,14 @@
       </span>
       <span class="post-meta-item-text">发表于</span>
 
-      <time title="创建时间：2020-08-31 10:43:17" itemprop="dateCreated datePublished" datetime="2020-08-31T10:43:17+08:00">2020-08-31</time>
+      <time title="创建时间：2020-08-08 21:58:13" itemprop="dateCreated datePublished" datetime="2020-08-08T21:58:13+08:00">2020-08-08</time>
     </span>
       <span class="post-meta-item">
         <span class="post-meta-item-icon">
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2020-09-14 14:43:55" itemprop="dateModified" datetime="2020-09-14T14:43:55+08:00">2020-09-14</time>
+        <time title="修改时间：2020-08-25 17:16:55" itemprop="dateModified" datetime="2020-08-25T17:16:55+08:00">2020-08-25</time>
       </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -481,14 +311,10 @@
     
     
     <div class="post-body" itemprop="articleBody">
-          <p><strong>由于本人能力有限，如有错误，欢迎指出。</strong><br><a target="_blank" rel="noopener" href="https://www.cs.umd.edu/~pugh/java/memoryModel/jsr-133-faq.html">原文地址</a>：<a target="_blank" rel="noopener" href="https://www.cs.umd.edu/~pugh/java/memoryModel/jsr-133-faq.html">https://www.cs.umd.edu/~pugh/java/memoryModel/jsr-133-faq.html</a><br><a href="https://yellowstar5.cn/direct/jsr-133-faq-chinese.html">如果你喜欢原文那种板式的话，可以看这个</a>：<a href="https://yellowstar5.cn/direct/jsr-133-faq-chinese.html">https://yellowstar5.cn/direct/jsr-133-faq-chinese.html</a></p>
-<h3 id="What-is-a-memory-model-anyway-无论如何，什么是内存模型？"><a href="#What-is-a-memory-model-anyway-无论如何，什么是内存模型？" class="headerlink" title="What is a memory model, anyway? (无论如何，什么是内存模型？)"></a>What is a memory model, anyway? (无论如何，什么是内存模型？)</h3><p>In multiprocessor systems, processors generally have one or more layers of memory cache, which improves performance both by speeding access to data (because the data is closer to the processor) and reducing traffic on the shared memory bus (because many memory operations can be satisfied by local caches.) Memory caches can improve performance tremendously, but they present a host of new challenges. What, for example, happens when two processors examine the same memory location at the same time? Under what conditions will they see the same value?</p>
-<p>在多处理器系统中，处理器通常具有一层或多层内存高速缓存， 这可以通过加快对数据的访问速度 (因为数据更靠近处理器) 和减少共享内存总线上的通信量 (因为本地缓存可以满足许多内存操作。)来提高性能。内存缓存可以极大地提高性能，但是它们带来了许多新的挑战。 例如，当两个处理器同时检查相同的内存位置时会发生什么？ 他们将在什么条件下看到相同的价值？</p>
-<p>At the processor level, a memory model defines necessary and sufficient conditions for knowing that writes to memory by other processors are visible to the current processor, and writes by the current processor are visible to other processors. Some processors exhibit a strong memory model, where all processors see exactly the same value for any given memory location at all times. Other processors exhibit a weaker memory model, where special instructions, called memory barriers, are required to flush or invalidate the local processor cache in order to see writes made by other processors or make writes by this processor visible to others. These memory barriers are usually performed when lock and unlock actions are taken; they are invisible to programmers in a high level language.</p>
-<p>在处理器级别，内存模型定义了必要条件和充分条件，以便知道其他处理器对内存的写操作对当前处理器可见，和当前处理器的写操作对其他处理器可见。 一些处理器表现出强大的内存模型，其中所有处理器始终在任何给定的内存位置看到完全相同的值。 其他处理器表现出较弱的内存模型，其中需要特殊的指令（称为内存屏障）来刷新或使本地处理器缓存无效， 以便该本地处理器看到其他处理器做出的写入或使该处理器的写入对其他处理器可见。 这些内存屏障通常在执行锁定和解锁操作时执行； 使用高级语言的程序员看不到它们。</p>
+          <h1 id="0-背景-缓存一致性"><a href="#0-背景-缓存一致性" class="headerlink" title="0.背景-缓存一致性"></a>0.背景-缓存一致性</h1><p>根据维基百科的定义：<br>在一个共享内存多处理器系统中，每个处理器都有一个单独的缓存，可以有很多共享数据副本：一个在主内存中，一个在每个请求它的处理器的本地缓存中。 当一个数据副本被更改时，其他副本必须反映该更改。 缓存一致性是确保共享操作数（数据）值的更改及时在整个系统中传播的学科。<br>下面图1是缓存不一致的示例图，图2是缓存一致的示例图</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/JSR-133-FAQ-%E4%B8%AD%E8%8B%B1%E5%AF%B9%E7%85%A7%E7%89%88/#more" rel="contents">
+              <a class="btn" href="/volatile%E5%9F%9F%E7%9A%84%E8%AF%AD%E4%B9%89%E5%8F%8A%E5%85%B6%E5%AE%9E%E7%8E%B0/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -519,7 +345,7 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="yellowstar5.cn/The-JSR-133-Cookbook-for-Compiler-Writers-%E4%B8%AD%E8%8B%B1%E5%AF%B9%E7%85%A7%E7%89%88%E7%BF%BB%E8%AF%91/">
+    <link itemprop="mainEntityOfPage" href="yellowstar5.cn/Unsafe%E4%BB%8B%E7%BB%8D%E5%8F%8ACAS%E5%8E%9F%E7%90%86%E8%A7%A3%E6%9E%90/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -533,7 +359,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/The-JSR-133-Cookbook-for-Compiler-Writers-%E4%B8%AD%E8%8B%B1%E5%AF%B9%E7%85%A7%E7%89%88%E7%BF%BB%E8%AF%91/" class="post-title-link" itemprop="url">The JSR-133 Cookbook for Compiler Writers 中英对照版翻译</a>
+            <a href="/Unsafe%E4%BB%8B%E7%BB%8D%E5%8F%8ACAS%E5%8E%9F%E7%90%86%E8%A7%A3%E6%9E%90/" class="post-title-link" itemprop="url">Unsafe介绍及CAS原理解析</a>
         </h2>
 
         <div class="post-meta-container">
@@ -544,14 +370,14 @@
       </span>
       <span class="post-meta-item-text">发表于</span>
 
-      <time title="创建时间：2020-08-21 19:16:21" itemprop="dateCreated datePublished" datetime="2020-08-21T19:16:21+08:00">2020-08-21</time>
+      <time title="创建时间：2020-07-26 21:23:59" itemprop="dateCreated datePublished" datetime="2020-07-26T21:23:59+08:00">2020-07-26</time>
     </span>
       <span class="post-meta-item">
         <span class="post-meta-item-icon">
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2020-09-14 18:11:49" itemprop="dateModified" datetime="2020-09-14T18:11:49+08:00">2020-09-14</time>
+        <time title="修改时间：2020-08-25 17:14:43" itemprop="dateModified" datetime="2020-08-25T17:14:43+08:00">2020-08-25</time>
       </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -573,17 +399,10 @@
     
     
     <div class="post-body" itemprop="articleBody">
-          <p><strong>由于本人能力有限，如有错误，烦请指出。</strong><br><a target="_blank" rel="noopener" href="http://gee.cs.oswego.edu/dl/jmm/cookbook.html">原文地址</a>：<a target="_blank" rel="noopener" href="http://gee.cs.oswego.edu/dl/jmm/cookbook.html">http://gee.cs.oswego.edu/dl/jmm/cookbook.html</a><br><a href="https://yellowstar5.cn/direct/The%20JSR-133%20Cookbook-chinese.html">我博客上中英对照版的地址</a>：<a href="https://yellowstar5.cn/direct/The%20JSR-133%20Cookbook-chinese.html">https://yellowstar5.cn/direct/The%20JSR-133%20Cookbook-chinese.html</a></p>
-<p>Preface: Over the 10+ years since this was initially written, many processor and language memory model specifications and issues have become clearer and better understood. And many have not. While this guide is maintained to remain accurate, it is incomplete about some of these evolving details. For more extensive coverage, see especially the work of Peter Sewell and the <a target="_blank" rel="noopener" href="http://www.cl.cam.ac.uk/~pes20/weakmemory/index.html">Cambridge Relaxed Memory Concurrency Group</a></p>
-<p>前言： 自此指南最初编写以来已有十多年，许多处理器和语言内存模型规范和问题已经变得更加清晰和更好地被理解。 然而许多还没有。 尽管本指南一直被维护着以保持准确性，但关于一些不断发展的细节，此指南给出的内容并不完整。 有关更广泛的报道，尤其要参见 Peter Sewell 和 <a target="_blank" rel="noopener" href="http://www.cl.cam.ac.uk/~pes20/weakmemory/index.html">Cambridge Relaxed Memory Concurrency Group</a> 的工作。</p>
-<p>This is an unofficial guide to implementing the new <a target="_blank" rel="noopener" href="http://www.cs.umd.edu/~pugh/java/memoryModel/">Java Memory Model (JMM)</a> specified by <a target="_blank" rel="noopener" href="http://jcp.org/en/jsr/detail?id=133">JSR-133</a> . It provides at most brief backgrounds about why various rules exist, instead concentrating on their consequences for compilers and JVMs with respect to instruction reorderings, multiprocessor barrier instructions, and atomic operations. It includes a set of recommended recipes for complying to JSR-133. This guide is “unofficial” because it includes interpretations of particular processor properties and specifications. We cannot guarantee that the intepretations are correct. Also, processor specifications and implementations may change over time.</p>
-<p>这是实现由 <a target="_blank" rel="noopener" href="http://jcp.org/en/jsr/detail?id=133">JSR-133</a> 规范的新 <a target="_blank" rel="noopener" href="http://www.cs.umd.edu/~pugh/java/memoryModel/">Java Memory Model (JMM)</a> 的非官方指南。 它提供了有关为什么存在各种规则的最简短的背景，而不是专注于它们在指令重新排序，多处理器屏障指令和原子操作方面对编译器和JVM的影响。 它包括一组符合 JSR-133 的推荐食谱。 本指南是“非官方的”，因为它包含对特定处理器属性和规范的解释。 我们不能保证解释是正确的。 此外，处理器规范和实现可能会随时间而变化。</p>
-<h2 id="Reorderings-重排序"><a href="#Reorderings-重排序" class="headerlink" title="Reorderings (重排序)"></a>Reorderings (重排序)</h2><p>For a compiler writer, the JMM mainly consists of rules disallowing reorderings of certain instructions that access fields (where “fields” include array elements) as well as monitors (locks).</p>
-<p>对于一个编译器编写者来说，JMM主要由禁止对访问字段（其中“字段”包括数组元素）和监视器（锁）的某些指令进行重排序的规则组成。</p>
-<h3 id="Volatiles-and-Monitors-volatile-和监视器"><a href="#Volatiles-and-Monitors-volatile-和监视器" class="headerlink" title="Volatiles and Monitors (volatile 和监视器)"></a>Volatiles and Monitors (volatile 和监视器)</h3><p>The main JMM rules for volatiles and monitors can be viewed as a matrix with cells indicating that you cannot reorder instructions associated with particular sequences of bytecodes. This table is not itself the JMM specification; it is just a useful way of viewing its main consequences for compilers and runtime systems.<br>可以将 volatile 和监视器的主要 JMM 规则视为带有单元格的矩阵，其中单元格指示了你无法对与特定字节码序列相关的指令进行重排序。 这个表格本身不是 JMM 规范； 它只是查看其对编译器和运行时系统的主要影响的一种有用方法。<br><img src="https://img-blog.csdnimg.cn/20200914145326998.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70#pic_center" alt="在这里插入图片描述"></p>
+          <h2 id="0-Unsafe介绍"><a href="#0-Unsafe介绍" class="headerlink" title="0.Unsafe介绍"></a>0.Unsafe介绍</h2><p>JavaDoc说, Unsafe提供了一组用于执行底层的，不安全操作的方法。那么具体有哪些方法呢，我画了一张图。<br><img src="https://img-blog.csdnimg.cn/20200726202149900.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70" alt="Unsafe 方法分类"><br>可以看到Unsafe中提供了CAS，内存操作，线程调度，本机信息，Class相关方法，查看和设置某个对象或字段，内存分配和释放相关操作，内存地址获取相关方法。我自己抽空对上述方法进行了注释，<br>你可以在<a target="_blank" rel="noopener" href="https://github.com/codercuixin/JUC/blob/master/src/main/java/sun/misc/Unsafe.java">这里看到</a>。<br>那么如何使用Unsafe呢？下面我们就来说说如何获取Unsafe并操作。</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/The-JSR-133-Cookbook-for-Compiler-Writers-%E4%B8%AD%E8%8B%B1%E5%AF%B9%E7%85%A7%E7%89%88%E7%BF%BB%E8%AF%91/#more" rel="contents">
+              <a class="btn" href="/Unsafe%E4%BB%8B%E7%BB%8D%E5%8F%8ACAS%E5%8E%9F%E7%90%86%E8%A7%A3%E6%9E%90/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -614,7 +433,7 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="yellowstar5.cn/Java%20%E5%8E%9F%E5%AD%90%E7%B1%BB%E7%9A%84%E4%BD%BF%E7%94%A8%E5%8F%8A%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/">
+    <link itemprop="mainEntityOfPage" href="yellowstar5.cn/Lombok-%E4%BD%BF%E7%94%A8%E5%AE%8C%E5%85%A8%E6%8C%87%E5%8D%97/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -628,7 +447,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/Java%20%E5%8E%9F%E5%AD%90%E7%B1%BB%E7%9A%84%E4%BD%BF%E7%94%A8%E5%8F%8A%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/" class="post-title-link" itemprop="url">Java原子类的使用及原理分析</a>
+            <a href="/Lombok-%E4%BD%BF%E7%94%A8%E5%AE%8C%E5%85%A8%E6%8C%87%E5%8D%97/" class="post-title-link" itemprop="url">Lombok 使用完全指南</a>
         </h2>
 
         <div class="post-meta-container">
@@ -639,14 +458,14 @@
       </span>
       <span class="post-meta-item-text">发表于</span>
 
-      <time title="创建时间：2020-08-16 22:37:15" itemprop="dateCreated datePublished" datetime="2020-08-16T22:37:15+08:00">2020-08-16</time>
+      <time title="创建时间：2019-08-10 22:46:03" itemprop="dateCreated datePublished" datetime="2019-08-10T22:46:03+08:00">2019-08-10</time>
     </span>
       <span class="post-meta-item">
         <span class="post-meta-item-icon">
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2020-08-25 17:57:48" itemprop="dateModified" datetime="2020-08-25T17:57:48+08:00">2020-08-25</time>
+        <time title="修改时间：2020-09-10 18:02:16" itemprop="dateModified" datetime="2020-09-10T18:02:16+08:00">2020-09-10</time>
       </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -654,7 +473,7 @@
       </span>
       <span class="post-meta-item-text">分类于</span>
         <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/JUC/" itemprop="url" rel="index"><span itemprop="name">JUC</span></a>
+          <a href="/categories/Lombok/" itemprop="url" rel="index"><span itemprop="name">Lombok</span></a>
         </span>
     </span>
 
@@ -668,10 +487,194 @@
     
     
     <div class="post-body" itemprop="articleBody">
-          <p>前面两篇文章，一篇文章我们介绍了<a target="_blank" rel="noopener" href="https://blog.csdn.net/YellowStar5/article/details/107599102">Unsafe中的CAS</a>，另一篇文章介绍了<a target="_blank" rel="noopener" href="https://blog.csdn.net/YellowStar5/article/details/107866046">volatile语义及其实现</a>，再来学习今天的Java原子类可以说是水到渠成。<br>再简单回顾一下Unsafe中CAS——该操作通过将内存中的值与指定数据进行比较，当数值一样时将内存中的数据替换为新的值；至于volatile则提供了可见性(每次读写都可以拿到最新值）和重排序限制。</p>
+          <h2 id="为什么要使用lombok。"><a href="#为什么要使用lombok。" class="headerlink" title="为什么要使用lombok。"></a>为什么要使用lombok。</h2><ul>
+<li>普通的 POJO 需要写或是用IDEA等集成开发环境生成大量gettter, setter方法</li>
+<li>普通的 POJO 对于 equals 和 hashCode 等方法，也需要自己维护。特别你写接口的时候，如果添加了<br>一个字段忘了维护，可能会导致一些bug。</li>
+<li>普通的 POJO 没有 builder 的支持，得自己实现该模式。</li>
+<li>….</li>
+</ul>
+<p>总之，lombok 极大地简化你的代码，去掉了那些模板代码，让你的POJO看起来更加地清爽（可以只有类名和字段的声明，加上少量的注解）。</p>
+<h2 id="jar-包的下载"><a href="#jar-包的下载" class="headerlink" title="jar 包的下载"></a>jar 包的下载</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.projectlombok&lt;&#x2F;groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;lombok&lt;&#x2F;artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.18.8&lt;&#x2F;version&gt;</span><br><span class="line">    &lt;scope&gt;provided&lt;&#x2F;scope&gt;</span><br><span class="line">&lt;&#x2F;dependency&gt;</span><br></pre></td></tr></table></figure>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/Java%20%E5%8E%9F%E5%AD%90%E7%B1%BB%E7%9A%84%E4%BD%BF%E7%94%A8%E5%8F%8A%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/#more" rel="contents">
+              <a class="btn" href="/Lombok-%E4%BD%BF%E7%94%A8%E5%AE%8C%E5%85%A8%E6%8C%87%E5%8D%97/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="yellowstar5.cn/Consul%20%E5%91%BD%E4%BB%A4%E8%A1%8C%E6%9C%80%E5%85%A8%E6%96%87%E6%A1%A3/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="YellowStar5">
+      <meta itemprop="description" content="Java后端程序员，想做个手艺人。">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="YellowStar5">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/Consul%20%E5%91%BD%E4%BB%A4%E8%A1%8C%E6%9C%80%E5%85%A8%E6%96%87%E6%A1%A3/" class="post-title-link" itemprop="url">Consul 命令行最全文档</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-06-09 18:37:03" itemprop="dateCreated datePublished" datetime="2019-06-09T18:37:03+08:00">2019-06-09</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020-08-25 17:15:27" itemprop="dateModified" datetime="2020-08-25T17:15:27+08:00">2020-08-25</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Consul/" itemprop="url" rel="index"><span itemprop="name">Consul</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h1 id="1-启动一个带ACL-控制的Agent"><a href="#1-启动一个带ACL-控制的Agent" class="headerlink" title="1.启动一个带ACL 控制的Agent"></a>1.启动一个带ACL 控制的Agent</h1><p>首先，从这个网址<a target="_blank" rel="noopener" href="https://www.consul.io/downloads.html">下载consul</a>，解压后发现就是个可执行文件，如果不可以执行，chmod +x consul 一下。</p>
+<p>为了试验Consul较多的功能，这里我们打算启用一个dev模式，带ACL控制的Consul代理。<br>配置文件config.json如下</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/Consul%20%E5%91%BD%E4%BB%A4%E8%A1%8C%E6%9C%80%E5%85%A8%E6%96%87%E6%A1%A3/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="yellowstar5.cn/Consul%20%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5%EF%BC%8C%E5%90%8C%E7%B1%BB%E6%AF%94%E8%BE%83%E5%92%8C%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="YellowStar5">
+      <meta itemprop="description" content="Java后端程序员，想做个手艺人。">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="YellowStar5">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/Consul%20%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5%EF%BC%8C%E5%90%8C%E7%B1%BB%E6%AF%94%E8%BE%83%E5%92%8C%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/" class="post-title-link" itemprop="url">Consul 基本概念，同类比较和内部原理</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-06-07 12:08:51" itemprop="dateCreated datePublished" datetime="2019-06-07T12:08:51+08:00">2019-06-07</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020-08-25 17:15:10" itemprop="dateModified" datetime="2020-08-25T17:15:10+08:00">2020-08-25</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Consul/" itemprop="url" rel="index"><span itemprop="name">Consul</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>这个文章我们主要来说一下Consul的基本概念，以及其实现的内部原理，和Eureka的比较。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/Consul%20%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5%EF%BC%8C%E5%90%8C%E7%B1%BB%E6%AF%94%E8%BE%83%E5%92%8C%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -697,7 +700,7 @@
 
   
   <nav class="pagination">
-    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><a class="extend next" rel="next" href="/page/3/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 

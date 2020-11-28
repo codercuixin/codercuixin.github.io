@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.1/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yellowstar5.cn","root":"/","scheme":"Muse","version":"8.0.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
+  </script>
+
+  <meta name="description" content="1.同步的语义下面的内容摘自JSR 133 FAQ:  Synchronization has several aspects. The most well-understood is mutual exclusion – only one thread can hold a monitor at once, so synchronizing on a monitor means that onc">
+<meta property="og:type" content="article">
+<meta property="og:title" content="synchronized关键字的内存语义及实现">
+<meta property="og:url" content="yellowstar5.cn/synchronized%E5%85%B3%E9%94%AE%E5%AD%97%E7%9A%84%E5%86%85%E5%AD%98%E8%AF%AD%E4%B9%89%E5%8F%8A%E5%AE%9E%E7%8E%B0/index.html">
+<meta property="og:site_name" content="YellowStar5">
+<meta property="og:description" content="1.同步的语义下面的内容摘自JSR 133 FAQ:  Synchronization has several aspects. The most well-understood is mutual exclusion – only one thread can hold a monitor at once, so synchronizing on a monitor means that onc">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/2020082717365146.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70#pic_center">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200901173412356.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70#pic_center">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200905113544868.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70#pic_center">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200905150143702.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70#pic_center">
+<meta property="article:published_time" content="2020-09-05T09:03:04.000Z">
+<meta property="article:modified_time" content="2020-09-05T09:17:35.976Z">
+<meta property="article:author" content="YellowStar5">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="Synchronization">
+<meta property="article:tag" content="重量级锁">
+<meta property="article:tag" content="轻量级锁">
+<meta property="article:tag" content="偏向锁">
+<meta property="article:tag" content="heavyweight lock">
+<meta property="article:tag" content="lightweight lock">
+<meta property="article:tag" content="biased lock">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://img-blog.csdnimg.cn/2020082717365146.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70#pic_center">
+
+
+<link rel="canonical" href="yellowstar5.cn/synchronized%E5%85%B3%E9%94%AE%E5%AD%97%E7%9A%84%E5%86%85%E5%AD%98%E8%AF%AD%E4%B9%89%E5%8F%8A%E5%AE%9E%E7%8E%B0/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>synchronized关键字的内存语义及实现 | YellowStar5</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">YellowStar5</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">风物长宜放眼量</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <section class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E5%90%8C%E6%AD%A5%E7%9A%84%E8%AF%AD%E4%B9%89"><span class="nav-number">1.</span> <span class="nav-text">1.同步的语义</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-synchronized%E7%9A%84%E5%9F%BA%E6%9C%AC%E4%BD%BF%E7%94%A8"><span class="nav-number">2.</span> <span class="nav-text">2 synchronized的基本使用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E4%BB%8EJVM%E5%AD%97%E8%8A%82%E7%A0%81%E5%B1%82%E9%9D%A2%E7%9C%8B%E5%90%8C%E6%AD%A5%E5%9D%97"><span class="nav-number">3.</span> <span class="nav-text">3.从JVM字节码层面看同步块</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-monitor-enter%E7%9A%84%E8%AF%B4%E6%98%8E%EF%BC%9Alock%E7%89%B9%E5%AE%9A%E5%AF%B9%E8%B1%A1%E7%9A%84monitor%E3%80%82"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 monitor_enter的说明：lock特定对象的monitor。</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-monitor-exit%E7%9A%84%E8%AF%B4%E6%98%8E%EF%BC%9A-unlock%E7%89%B9%E5%AE%9A%E5%AF%B9%E8%B1%A1%E7%9A%84monitor%E3%80%82"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 monitor_exit的说明： unlock特定对象的monitor。</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-%E4%B8%8B%E9%9D%A2%E6%98%AF%E5%85%B3%E4%BA%8E%E5%BC%82%E5%B8%B8%E8%A1%A8-Exception-table-%E7%9A%84%E8%AF%B4%E6%98%8E%EF%BC%9A"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 下面是关于异常表( Exception table)的说明：</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E4%BB%8EJVM%E5%AD%97%E8%8A%82%E7%A0%81%E5%B1%82%E9%9D%A2%E7%9C%8B%E5%90%8C%E6%AD%A5%E6%96%B9%E6%B3%95"><span class="nav-number">4.</span> <span class="nav-text">4.从JVM字节码层面看同步方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E4%BB%8E%E6%9C%BA%E5%99%A8%E7%A0%81%E7%9C%8Bsynchronized"><span class="nav-number">5.</span> <span class="nav-text">5.从机器码看synchronized</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E5%90%8C%E6%AD%A5"><span class="nav-number">6.</span> <span class="nav-text">6. 同步</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#6-1-%E9%87%8D%E9%87%8F%E7%BA%A7%E9%94%81-heavyweight-monitor"><span class="nav-number">6.1.</span> <span class="nav-text">6.1 重量级锁 heavyweight monitor</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-2-%E8%BD%BB%E9%87%8F%E7%BA%A7%E9%94%81-lightweight-lock"><span class="nav-number">6.2.</span> <span class="nav-text">6.2 轻量级锁  lightweight lock</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-3-%E5%81%8F%E5%90%91%E9%94%81-biased-lock"><span class="nav-number">6.3.</span> <span class="nav-text">6.3 偏向锁 biased lock</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-4-%E9%94%81%E7%9A%84%E8%BD%AC%E6%8D%A2"><span class="nav-number">6.4.</span> <span class="nav-text">6.4  锁的转换</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E6%80%BB%E7%BB%93"><span class="nav-number">7.</span> <span class="nav-text">7.总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E5%8F%82%E8%80%83"><span class="nav-number">8.</span> <span class="nav-text">8.参考</span></a></li></ol></div>
+        </section>
+        <!--/noindex-->
+
+        <section class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">YellowStar5</p>
+  <div class="site-description" itemprop="description">Java后端程序员，想做个手艺人。</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">14</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">34</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://www.douban.com/people/146579421/" title="豆瓣 → https:&#x2F;&#x2F;www.douban.com&#x2F;people&#x2F;146579421&#x2F;" rel="noopener" target="_blank"><i class="fas fa-book-reader fa-fw"></i>豆瓣</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/codercuixin" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;codercuixin" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/u/5509464340" title="微博 → https:&#x2F;&#x2F;weibo.com&#x2F;u&#x2F;5509464340" rel="noopener" target="_blank"><i class="fab fa-weibo fa-fw"></i>微博</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://yellowstar5.cn/atom.xml" title="RSS → https:&#x2F;&#x2F;yellowstar5.cn&#x2F;atom.xml"><i class="fa fa-rss-square fa-fw"></i>RSS</a>
+      </span>
+  </div>
+
+
+
+        </section>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="yellowstar5.cn/synchronized%E5%85%B3%E9%94%AE%E5%AD%97%E7%9A%84%E5%86%85%E5%AD%98%E8%AF%AD%E4%B9%89%E5%8F%8A%E5%AE%9E%E7%8E%B0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="YellowStar5">
+      <meta itemprop="description" content="Java后端程序员，想做个手艺人。">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="YellowStar5">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          synchronized关键字的内存语义及实现
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2020-09-05 17:03:04 / 修改时间：17:17:35" itemprop="dateCreated datePublished" datetime="2020-09-05T17:03:04+08:00">2020-09-05</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/JUC/" itemprop="url" rel="index"><span itemprop="name">JUC</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h2 id="1-同步的语义"><a href="#1-同步的语义" class="headerlink" title="1.同步的语义"></a>1.同步的语义</h2><p>下面的内容摘自<a href="https://yellowstar5.cn/direct/jsr-133-faq-chinese.html">JSR 133 FAQ</a>:</p>
+<blockquote>
+<p>Synchronization has several aspects. The most well-understood is mutual exclusion – only one thread can hold a monitor at once, so synchronizing on a monitor means that once one thread enters a synchronized block protected by a monitor, no other thread can enter a block protected by that monitor until the first thread exits the synchronized block.</p>
+</blockquote>
+<p>同步有几个方面。最容易理解的是<strong>互斥</strong> —— 只有一个线程可以立即持有一个监视器，因此在监视器上进行同步意味着一旦一个线程进入由一个监视器保护的同步块，则其他线程都不能进入该监视器保护的块，直到第一个线程退出同步块。</p>
+<a id="more"></a>
+
+<blockquote>
+<p>But there is more to synchronization than mutual exclusion. Synchronization ensures that memory writes by a thread before or during a synchronized block are made visible in a predictable manner to other threads which synchronize on the same monitor. After we exit a synchronized block, we release the monitor, which has the effect of flushing the cache to main memory, so that writes made by this thread can be visible to other threads. Before we can enter a synchronized block, we acquire the monitor, which has the effect of invalidating the local processor cache so that variables will be reloaded from main memory. We will then be able to see all of the writes made visible by the previous release.</p>
+</blockquote>
+<p>但是同步不仅仅是互斥。 <strong>同步确保以可预见的方式，使线程在同步块之前或期间对内存的写入对于在同一监视器上同步的其他线程可见。</strong> 退出同步块后，我们 释放 该监视器，其有将缓存刷新到主内存的效果， 以便该线程进行的写入对于其他线程可见。 在我们进入一个同步块之前，我们需要 获取 该监视器，该监视器具有使本地处理器缓存无效的作用，以便可以从主内存中重新加载变量。 然后，我们将能够看到以前释放中所有可见的写入。</p>
+<blockquote>
+<p>Discussing this in terms of caches, it may sound as if these issues only affect multiprocessor machines. However, the reordering effects can be easily seen on a single processor. It is not possible, for example, for the compiler to move your code before an acquire or after a release. When we say that acquires and releases act on caches, we are using shorthand for a number of possible effects.</p>
+</blockquote>
+<p>从高速缓存的角度进行讨论，听起来似乎这些问题仅影响多处理器计算机。 但是，重排序效果可以在单个处理器上轻松看到。 例如，编译器不可能在获取之前或释放之后移动代码。 当我们说获取和释放作用于缓存时，我们使用简写来表示多种可能的影响。</p>
+<blockquote>
+<p>The new memory model semantics create a partial ordering on memory operations (read field, write field, lock, unlock) and other thread operations (start and join), where some actions are said to happen before other operations. When one action happens before another, the first is guaranteed to be ordered before and visible to the second. The rules of this ordering are as follows:</p>
+</blockquote>
+<p><strong>新的内存模型语义在内存操作（读字段，写字段，锁定，解锁）和其他线程操作（ start 和 join ）上创建了部分排序</strong>，其中某些操作据说 happen before其他操作。 当一个动作在另一个动作之前发生时，第一个动作被确保排序在第二个动作之前并且对于第二个动作可见。 此排序规则如下：</p>
+<ul>
+<li><p>Each action in a thread happens before every action in that thread that comes later in the program’s order.<br>线程中的每个动作先于该线程中的在程序顺序上后出现的每个动作发生。</p>
+</li>
+<li><p>An unlock on a monitor happens before every subsequent lock on that same monitor.<br>监视器上的一个解锁发生在 同一个 监视器上的每个后续锁定之前。</p>
+</li>
+<li><p>A write to a volatile field happens before every subsequent read of that same volatile.<br>对 volatile 字段的每个写操作发生在每次后续读取 同一个 volatile之前。</p>
+</li>
+<li><p>A call to start() on a thread happens before any actions in the started thread.<br>一个对线程的 start() 的调用发生在被启动线程中的任何操作之前。</p>
+</li>
+<li><p>All actions in a thread happen before any other thread successfully returns from a join() on that thread.<br>线程中的所有操作发生在其他线程成功从该线程上的 join() 返回之前。</p>
+</li>
+</ul>
+<blockquote>
+<p>This means that any memory operations which were visible to a thread before exiting a synchronized block are visible to any thread after it enters a synchronized block protected by the same monitor, since all the memory operations happen before the release, and the release happens before the acquire.</p>
+</blockquote>
+<p>这意味着线程在退出同步块之前对一个线程可见的任何内存操作，在进入受同一监视器保护的同步块之后对于任何线程都是可见的，因为所有内存操作都发生在释放之前，而释放发生在获取之前。</p>
+<p><strong>可以看到同步的语义包含两点：一个是互斥，一个是保证可见性。</strong></p>
+<h2 id="2-synchronized的基本使用"><a href="#2-synchronized的基本使用" class="headerlink" title="2 synchronized的基本使用"></a>2 synchronized的基本使用</h2><p>根据<a target="_blank" rel="noopener" href="https://docs.oracle.com/javase/specs/jls/se8/html/jls-8.html#d5e12889">Java 语言规范</a>可知：</p>
+<p>Java里面的每个对象都关联着一个 monitor，一个线程可以 lock 或者 unlock这个 monitor。</p>
+<ul>
+<li><p>对于一个类方法，该方法所在类的Class对象关联的monitor被使用。</p>
+</li>
+<li><p>对于一个实例方法，与this（某个调用该方法的实例对象）关联的monitor被使用。</p>
+</li>
+<li><p>对于一个同步块，即synchronized(obj)｛….｝,与obj关联的monitor被使用。</p>
+</li>
+</ul>
+<p>举个栗子：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> synchronizedTest;</span><br><span class="line"> </span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Test</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> count;</span><br><span class="line">    <span class="comment">//实例同步方法</span></span><br><span class="line">    <span class="function"><span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title">bump</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        count++;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">int</span> classCount;</span><br><span class="line">    <span class="comment">//类同步方法</span></span><br><span class="line">    <span class="function"><span class="keyword">static</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title">classBump</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        classCount++;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面的代码等价于：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> synchronizedTest;</span><br><span class="line"> </span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">BumpTest</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> count;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">bump</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="comment">//同步块</span></span><br><span class="line">        <span class="keyword">synchronized</span> (<span class="keyword">this</span>) &#123; count++; &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">int</span> classCount;</span><br><span class="line">    <span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">classBump</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">             <span class="comment">//同步块</span></span><br><span class="line">            <span class="keyword">synchronized</span> (Class.forName(<span class="string">&quot;BumpTest&quot;</span>)) &#123;</span><br><span class="line">                classCount++;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (ClassNotFoundException e) &#123;&#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<h2 id="3-从JVM字节码层面看同步块"><a href="#3-从JVM字节码层面看同步块" class="headerlink" title="3.从JVM字节码层面看同步块"></a>3.从JVM字节码层面看同步块</h2><p>反解析下上面两个类对应的字节码文件。</p>
+<p>编译成class文件</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">javac synchronizedTest/Test.java</span><br></pre></td></tr></table></figure>
+
+<p>将Class文件反汇编下</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">javap -p -v synchronizedTest/Test &gt; synchronizedTest/Test.disasm</span><br></pre></td></tr></table></figure>
+
+<p>类似地：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">javac synchronizedTest/BumpTest.java</span><br><span class="line">javap -p -v synchronizedTest/BumpTest &gt; synchronizedTest/BumpTest.disasm</span><br></pre></td></tr></table></figure>
+
+<p>下面重点看下Test.disasm和BumpTest.disasm</p>
+<p>BumpTest.bump方法节选</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">bump</span><span class="params">()</span></span>;</span><br><span class="line">  descriptor: ()V</span><br><span class="line">  flags:</span><br><span class="line">  Code:</span><br><span class="line">    stack=<span class="number">3</span>, locals=<span class="number">3</span>, args_size=<span class="number">1</span></span><br><span class="line">       <span class="number">0</span>: aload_0</span><br><span class="line">       <span class="number">1</span>: dup</span><br><span class="line">       <span class="number">2</span>: astore_1</span><br><span class="line">       <span class="number">3</span>: monitorenter</span><br><span class="line">       <span class="number">4</span>: aload_0</span><br><span class="line">       <span class="number">5</span>: dup</span><br><span class="line">       6: getfield      #2                  // Field count:I</span><br><span class="line">       <span class="number">9</span>: iconst_1</span><br><span class="line">      <span class="number">10</span>: iadd</span><br><span class="line">      11: putfield      #2                  // Field count:I</span><br><span class="line">      <span class="number">14</span>: aload_1</span><br><span class="line">      <span class="number">15</span>: monitorexit</span><br><span class="line">      <span class="number">16</span>: goto          <span class="number">24</span></span><br><span class="line">      <span class="number">19</span>: astore_2</span><br><span class="line">      <span class="number">20</span>: aload_1</span><br><span class="line">      <span class="number">21</span>: monitorexit</span><br><span class="line">      <span class="number">22</span>: aload_2</span><br><span class="line">      <span class="number">23</span>: athrow</span><br><span class="line">      <span class="number">24</span>: <span class="keyword">return</span></span><br><span class="line">    Exception table:</span><br><span class="line">       from    to  target type</span><br><span class="line">           <span class="number">4</span>    <span class="number">16</span>    <span class="number">19</span>   any</span><br><span class="line">          <span class="number">19</span>    <span class="number">22</span>    <span class="number">19</span>   any</span><br><span class="line">    LineNumberTable:</span><br><span class="line">      line <span class="number">6</span>: <span class="number">0</span></span><br><span class="line">      line <span class="number">7</span>: <span class="number">24</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="3-1-monitor-enter的说明：lock特定对象的monitor。"><a href="#3-1-monitor-enter的说明：lock特定对象的monitor。" class="headerlink" title="3.1 monitor_enter的说明：lock特定对象的monitor。"></a>3.1 <strong><a target="_blank" rel="noopener" href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-6.html#jvms-6.5.monitorenter">monitor_enter</a>的说明：lock特定对象的monitor。</strong></h3><blockquote>
+<p>The objectref must be of type reference.<br>Each object is associated with a monitor. A monitor is locked if and only if it has an owner. The thread that executes monitorenter attempts to gain ownership of the monitor associated with objectref, as follows:<br>If the entry count of the monitor associated with objectref is zero, the thread enters the monitor and sets its entry count to one. The thread is then the owner of the monitor.<br> If the thread already owns the monitor associated with objectref, it reenters the monitor, incrementing its entry count.<br> If another thread already owns the monitor associated with objectref, the thread blocks until the monitor’s entry count is zero, then tries again to gain ownership.</p>
+</blockquote>
+<p> objectref必须是引用类型。<br>每个对象都与一个监视器关联。 监视器只有在拥有所有者的情况下才被锁定。 执行monitorenter的线程尝试获得与objectref关联的监视器的所有权，如下所示：<br>如果与objectref关联的监视器的条目计数为零，则线程进入监视器并将其条目计数设置为1。 然后，该线程是监视器的所有者。<br>如果线程已经拥有与objectref关联的监视器，则它将重新进入监视器，从而条目计数加1。<br>如果另一个线程已经拥有与objectref关联的监视器，则该线程将阻塞，直到该监视器的条目计数为零为止，然后再次尝试获取所有权。</p>
+<h3 id="3-2-monitor-exit的说明：-unlock特定对象的monitor。"><a href="#3-2-monitor-exit的说明：-unlock特定对象的monitor。" class="headerlink" title="3.2 monitor_exit的说明： unlock特定对象的monitor。"></a>3.2 <strong><a target="_blank" rel="noopener" href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-6.html#jvms-6.5.monitorexit">monitor_exit</a>的说明： unlock特定对象的monitor。</strong></h3><blockquote>
+<p>The objectref must be of type reference.<br>The thread that executes monitorexit must be the owner of the monitor associated with the instance referenced by objectref.<br>The thread decrements the entry count of the monitor associated with objectref. If as a result the value of the entry count is zero, the thread exits the monitor and is no longer its owner. Other threads that are blocking to enter the monitor are allowed to attempt to do so.</p>
+</blockquote>
+<p>objectref必须是引用类型。<br>执行monitorexit的线程必须是与objectref引用的实例相关联的监视器的所有者。<br>该线程减少与objectref关联的监视器的条目计数。 结果，如果条目计数的值为零，则线程退出监视器，并且不再是其所有者。 其他被阻塞进入监视器的线程可以尝试进入监视器。</p>
+<h3 id="3-3-下面是关于异常表-Exception-table-的说明："><a href="#3-3-下面是关于异常表-Exception-table-的说明：" class="headerlink" title="3.3 下面是关于异常表( Exception table)的说明："></a>3.3 下面是关于异常表( Exception table)的说明：</h3><p>上面是bump方法对应的指令，异常表有两行（如下所示），每一行称为异常表条目：</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">4    16    19   <span class="selector-tag">any</span>   </span><br><span class="line">19    22    19   <span class="selector-tag">any</span></span><br></pre></td></tr></table></figure>
+<p>每个异常表条目监控[from, to)的字节码，如果出现异常，则跳转到target指针对应的字节码执行，type则代表该处理器所能捕获的异常类型（any代表任何异常）。<br>对应的上面两个异常条目的意思就是：</p>
+<ul>
+<li>4对应from，16对应to, 19对应target， any对应type；也就是[4,16)指向的字节码指令抛任何异常（any）了，都会跳转到19执行。</li>
+<li>19对应from，22对应to, 19对应target， any对应type；也就是[19, 22)指向的字节码抛出任何异常（any）了，都会跳转到19执行。</li>
+</ul>
+<p>也就是</p>
+<ul>
+<li>情况一：[4,16)执行没有任何异常，则goto到24，返回。在这种情况下正常加锁 <code>3: monitorenter</code>，释放锁 <code>15: monitorexit</code></li>
+<li>情况二：[4,16)抛出任何异常，都跳转19，都会执行到 <code>21: monitorexit</code>；如果成功了，则异常结束；如果在[19, 22)执行中抛出任何异常，就跳转到19再重新执行一遍。</li>
+</ul>
+<p>通过上面的分析，我们可以发现，不管是否抛出异常，synchronized 同步块，都会释放之前获取的锁，<strong>也就是 monitorenter 与 monitorexit 始终是成对出现的。</strong></p>
+<p>BumpTest.classBump和BumpTest.bump是类似，你可以自己尝试分析下。</p>
+<h2 id="4-从JVM字节码层面看同步方法"><a href="#4-从JVM字节码层面看同步方法" class="headerlink" title="4.从JVM字节码层面看同步方法"></a>4.从JVM字节码层面看同步方法</h2><p>Test.bump节选</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title">bump</span><span class="params">()</span></span>;</span><br><span class="line">  descriptor: ()V</span><br><span class="line">  flags: ACC_SYNCHRONIZED</span><br><span class="line">  Code:</span><br><span class="line">    stack=<span class="number">3</span>, locals=<span class="number">1</span>, args_size=<span class="number">1</span></span><br><span class="line">       <span class="number">0</span>: aload_0</span><br><span class="line">       <span class="number">1</span>: dup</span><br><span class="line">       2: getfield      #2                  // Field count:I</span><br><span class="line">       <span class="number">5</span>: iconst_1</span><br><span class="line">       <span class="number">6</span>: iadd</span><br><span class="line">       7: putfield      #2                  // Field count:I</span><br><span class="line">      <span class="number">10</span>: <span class="keyword">return</span></span><br><span class="line">    LineNumberTable:</span><br><span class="line">      line <span class="number">6</span>: <span class="number">0</span></span><br><span class="line">      line <span class="number">7</span>: <span class="number">10</span></span><br></pre></td></tr></table></figure>
+<p>由<a target="_blank" rel="noopener" href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-6.html#jvms-6.5.monitorenter">Java虚拟机规范可知</a></p>
+<blockquote>
+<p>Monitor entry on invocation of a synchronized method, and monitor exit on its return, are handled implicitly by the Java Virtual Machine’s method invocation and return instructions, as if monitorenter and monitorexit were used.</p>
+</blockquote>
+<p> Java虚拟机的方法调用和返回指令，隐式处理了调用同步方法时的monitor entry 和返回时的monitor exit，就像使用了monitorenter 和monitorexit 一样。</p>
+<p><strong>所以，同步方法和同步块的实现方式本质上并没有什么不同。</strong></p>
+<h2 id="5-从机器码看synchronized"><a href="#5-从机器码看synchronized" class="headerlink" title="5.从机器码看synchronized"></a>5.从机器码看synchronized</h2><p>假如我们把BumpTest改成如下代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> synchronizedTest;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">BumpTest</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> count;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">bump</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">synchronized</span> (<span class="keyword">this</span>) &#123; count++; &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">int</span> classCount;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">classBump</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">synchronized</span> (Class.forName(<span class="string">&quot;BumpTest&quot;</span>)) &#123;</span><br><span class="line">                classCount++;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (ClassNotFoundException e) &#123;&#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span></span>&#123;</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>; i&lt; <span class="number">100000</span>; i++)&#123;</span><br><span class="line">            classBump();</span><br><span class="line">        &#125;</span><br><span class="line">        System.out.println(classCount);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>然后重新编译成字节码文件，再得到本地机器指令文件（注意，执行第二条指令还需要hsdis,你可以参考我<a target="_blank" rel="noopener" href="https://blog.csdn.net/YellowStar5/article/details/107866046#t7">之前的文章</a>安装）</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">javac synchronizedTest/BumpTest.java</span><br><span class="line">java -XX:+UnlockDiagnosticVMOptions -XX:+PrintAssembly synchronizedTest/BumpTest &gt; synchronizedTest/BumpTest.native</span><br></pre></td></tr></table></figure>
+<p>然后我们搜索<code>&#39;classBump&#39;</code>，发现了下面的机器指令，可以看到在Intel64 CPU 下，synchronized 最终还是用 lock cmpxchg 实现的。<br><img src="https://img-blog.csdnimg.cn/2020082717365146.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70#pic_center" alt="在这里插入图片描述"><br><strong>从这里我们可以发现，这里的 synchronized 和之前讲的volatile， Unsafe中的CAS，刚好是用类似的原子指令（比如这里的lock cmpxchg）实现的</strong>。</p>
+<p>至于BumpTest 和Test中其他同步方法或同步块，你可以试一下，结果是一致的。</p>
+<h2 id="6-同步"><a href="#6-同步" class="headerlink" title="6. 同步"></a>6. 同步</h2><p><strong>但是，并不是所有的同步都是用上述的原子指令实现的（其实是轻量级锁），而是根据不同情况使用不同的锁，锁的类型分为重量级锁，轻量级锁，偏向锁。</strong> 下面主要简单地说明这三种锁的实现。</p>
+<p>HotSpot JVM 使用一个 two-word 对象头，第一个word是 Class pointer，第二个是 Mark word 用来保存同步，GC 和 hashCode 等相关信息。Mark word使用方式见下图：<br><img src="https://img-blog.csdnimg.cn/20200901173412356.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70#pic_center" alt="Mark word"></p>
+<h3 id="6-1-重量级锁-heavyweight-monitor"><a href="#6-1-重量级锁-heavyweight-monitor" class="headerlink" title="6.1 重量级锁 heavyweight monitor"></a>6.1 重量级锁 heavyweight monitor</h3><p>重量级锁对应上述 Mark word 的 tag bits 为10的情况，即此时状态为inflated。</p>
+<p><strong>重量级锁会使用操作系统级别的锁定原语 ( OS-level locking primitives， 比如 pthread mutex) 来实现。</strong> 这些操作将涉及系统调用，需要从操作系统的用户态切换至内核态，其开销非常之大。重量级锁可以在所有场景使用。</p>
+<h3 id="6-2-轻量级锁-lightweight-lock"><a href="#6-2-轻量级锁-lightweight-lock" class="headerlink" title="6.2 轻量级锁  lightweight lock"></a>6.2 轻量级锁  lightweight lock</h3><p>轻量级锁对应上述 Mark word 的 tag bits  为 00 的情况，即此时状态为 lightweight-locked。</p>
+<p>轻量级锁是对重量级锁的优化。<strong>轻量级锁使用一个或两个 CPU 级别的原子指令（比如 lock cmpxchg），从而避免了使用操作系统级别的锁定原语。</strong><br>可选的轻量级锁实现算法有 <a target="_blank" rel="noopener" href="https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.119.5433&rep=rep1&type=pdf">Metalock</a>  (CAS in both acquire and release), <a target="_blank" rel="noopener" href="http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.72.1414&rep=rep1&type=pdf">Thin Locks</a>(CAS in acquire), 和 <a target="_blank" rel="noopener" href="https://www.usenix.org/legacy/event/jvm01/full_papers/dice/dice.pdf">Relaxed-locks</a> (CAS in acquire).</p>
+<p><strong>但轻量级锁适用范围有限，以 Thin Locks 为例子，它适用于这样的对象，这些对象不被争用，不需要对自己执行 wait，notify 或 notifyAll 操作，并且没有锁定到过多的嵌套深度</strong>。绝大多数对象都满足上述条件； 那些不满足条件的对象的锁要用重量级锁来实现。</p>
+<h3 id="6-3-偏向锁-biased-lock"><a href="#6-3-偏向锁-biased-lock" class="headerlink" title="6.3 偏向锁 biased lock"></a>6.3 偏向锁 biased lock</h3><p>偏向锁在 JDK6 引入，对应上述 Mark word 的 tag bits  为 01 的情况，即此时状态为 unlocked 或 biasable。</p>
+<p><strong>偏向锁是对轻量级锁的再优化，尝试在 acquire 和 release 中避免原子指令, 仅在第一次获取时执行一次原子指令，以将锁定线程 ID 安装到 mark word 中</strong>。</p>
+<p>但偏向锁的适用范围相对轻量级锁来说更加有限，<strong>偏向锁适用于单个进程反复获取并释放锁，而其他进程很少访问该锁的情况，即大多数对象在其生命周期中最多只能被一个线程锁定的情况。</strong></p>
+<p>更多关于偏向锁的知识，请见 <a target="_blank" rel="noopener" href="https://cdn.app.compendium.com/uploads/user/e7c690e8-6ff9-102a-ac6d-e4aebca50425/f4a5b21d-66fa-4885-92bf-c4e81c06d916/File/ccd39237cd4dc109d91786762fba41f0/qrl_oplocks_biasedlocking.pdf">Quickly Reacquirable Locks </a>和 <a target="_blank" rel="noopener" href="https://blogs.oracle.com/dave/biased-locking-in-hotspot">Biased Locking in HotSpot</a></p>
+<h3 id="6-4-锁的转换"><a href="#6-4-锁的转换" class="headerlink" title="6.4  锁的转换"></a>6.4  锁的转换</h3><p>在 HotSpot JVM 中，按照偏向锁，轻量级锁，重量级锁的顺序来尝试获取对象的锁。完整流程见下图：<br><img src="https://img-blog.csdnimg.cn/20200905113544868.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70#pic_center" alt="在这里插入图片描述"><br>偏向锁相关流程（<strong>对应上图中以1开头的</strong>）：<br>如果新分配的对象O是可偏向的但未被偏向（<strong>对应上图中1</strong>），那么第一次锁定的时候使用 CAS 在 mark word 中插入线程T1的ID（<strong>对应上图中1-1</strong>），而接下来的锁定仅仅将 mark word 里面的 线程T1的ID 与 当前线程T2的比较，此时可能出现两种情况：</p>
+<ul>
+<li>情况1：如果线程ID一样，则表明对象O 已偏向当前线程 T2，也就是当前线程 T2 已经锁定对象 O，可以无需 CAS 即可 lock/unlock  (<strong>对应图中1-2</strong>）</li>
+<li>情况2：如果线程ID不一样，则撤销对T1的偏向, 并需要检查对象O是否可以重偏向。如果可以重偏向，则将对象O重偏向到线程T2（<strong>对应上图中1-3</strong>）；否则将撤销偏向并回退到正常锁定流程（<strong>对应上图中以2开头的</strong>），此后对象 O 对应的类不可以再被偏向锁定。</li>
+</ul>
+<p>轻量级锁和重量级锁流程（<strong>对应上图中以2开头的</strong>）：<br>如果新分配的对象O对应的类不可偏向，则先尝试通过 CAS 设置 mark word来获取轻量级锁。如果成功，则获取轻量级锁；如果失败，则先判断是否是递归锁定，如果是则表明已经获取锁，如果不是则膨胀为重量级锁。</p>
+<p>轻量级锁定时，每次进入同步方法，都会在栈帧中生成一个新的 lock record （锁记录），该锁记录有两个字段displaced hdr和owner，displaced hdr 用来保存锁对象的对象头mark word， owner用来保存指向锁对象的指针。另外，Lock record出于内存对齐的要求，会确保lock record的存储地址最后两位为00 ，这两位刚好用来作为轻量级锁的标识。</p>
+<p>轻量级锁定：尝试将 lock record 的 displaced hdr 用来保存锁对象原来的mark word；将lock record的owner指向锁对象；将锁对象原来的mark word 替换为指向lock record的指针；这三步都会在同一个CAS原子地进行尝试。<br>如果CAS 成功，则表明获取轻量级锁成功，也就是下图所示的情况<br><img src="https://img-blog.csdnimg.cn/20200905150143702.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70#pic_center" alt="在这里插入图片描述"><br>如果CAS 失败，则分为递归锁定和需要膨胀到重量级锁两种情况处理。<br>虚拟机首先测试对象的 mark word 是否指向当前线程的方法栈。</p>
+<ul>
+<li>如果是，则表明是递归锁定，当前线程已经拥有对象的锁，可以安全地继续执行它。对于这种递归锁定的对象，将 lock record 初始化为0而不是对象的 mark word。（<strong>对应上图中的2-2</strong>）</li>
+<li>如果不是，则表明存在两个不同的线程同时在同一个对象上同步，这时需要将轻量级锁膨胀到重量级锁，也就是将指向heavy monitor的指针赋值给 对象的 mark word（<strong>对应上图中的2-3</strong>）</li>
+</ul>
+<p>上面只是关于同步流程的部分总结，关于同步更全面的介绍，请参见Sun 的 <a target="_blank" rel="noopener" href="https://pdfs.semanticscholar.org/bc8f/7a35b87b452924e180ed15b58f049bcac9db.pdf">Eliminating Synchronization Related Atomic Operations with Biased Locking and Bulk Rebiasing</a> 和 <a target="_blank" rel="noopener" href="https://fliphtml5.com/tzor/bqxz">Synchronization in Java SE 6(HotSpot)</a> ，以及 <a target="_blank" rel="noopener" href="https://wiki.openjdk.java.net/display/HotSpot/Synchronization">Synchronization</a> （<a href="https://yellowstar5.cn/Synchronization-%E4%B8%AD%E8%8B%B1%E6%96%87%E5%AF%B9%E7%85%A7%E7%BF%BB%E8%AF%91/">我翻译的Synchronization中英对照版</a> ，还有 <a target="_blank" rel="noopener" href="https://time.geekbang.org/column/article/13530">Java虚拟机是怎么实现synchronized的？</a> ，以及在源码 <a target="_blank" rel="noopener" href="http://hg.openjdk.java.net/jdk8/jdk8/hotspot/file/87ee5ee27509/src/share/vm/interpreter/bytecodeInterpreter.cpp">bytecodeInterpreter.cpp</a> 搜索<code>Lock method if synchronized</code> 。</p>
+<h2 id="7-总结"><a href="#7-总结" class="headerlink" title="7.总结"></a>7.总结</h2><p>这篇文章首先对 synchronized 的基本使用进行了复习；然后尝试从字节码和本地机器码的角度上看 synchronized 的实现；最后通过查看官方文档弄清synchronized 的实现会分别尝试偏向锁（尝试避免原子指令，仅第一次的时候需要使用原子指令，以将锁定线程的 ID 安装到 header word 中），轻量级锁（在锁定和解锁中使用 一个或两个CPU-level 的原子指令），重量级锁（操作系统级调用），这三种锁实现适用范围越来越大，但代价也越来越大。</p>
+<p>其实 synchronized 如何实现对于一般人是无感的，这也是为什么每次 JDK 发布都可能会改善它的性能，我们要做的基本上是根据 JDK 版本理解对应的实现，然后调整一下 相应的 JVM 参数。  </p>
+<h2 id="8-参考"><a href="#8-参考" class="headerlink" title="8.参考"></a>8.参考</h2><p>1.Java语言规范第八版第17章<br>2.Java虚拟机规范第八版<br>3.<a target="_blank" rel="noopener" href="https://www.cs.umd.edu/~pugh/java/memoryModel/jsr-133-faq.html">https://www.cs.umd.edu/~pugh/java/memoryModel/jsr-133-faq.html</a><br>4.<a target="_blank" rel="noopener" href="https://time.geekbang.org/column/article/13530">https://time.geekbang.org/column/article/13530</a><br>5.<a target="_blank" rel="noopener" href="https://blogs.oracle.com/dave/biased-locking-in-hotspot">https://blogs.oracle.com/dave/biased-locking-in-hotspot</a><br>6.<a target="_blank" rel="noopener" href="https://wiki.openjdk.java.net/display/HotSpot/Synchronization">https://wiki.openjdk.java.net/display/HotSpot/Synchronization</a><br>7.<a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/46312817/does-java-ever-rebias-an-individual-lock">https://stackoverflow.com/questions/46312817/does-java-ever-rebias-an-individual-lock</a><br>8.<a target="_blank" rel="noopener" href="https://www.zhihu.com/question/57774251">https://www.zhihu.com/question/57774251</a></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Java/" rel="tag"># Java</a>
+              <a href="/tags/Synchronization/" rel="tag"># Synchronization</a>
+              <a href="/tags/%E9%87%8D%E9%87%8F%E7%BA%A7%E9%94%81/" rel="tag"># 重量级锁</a>
+              <a href="/tags/%E8%BD%BB%E9%87%8F%E7%BA%A7%E9%94%81/" rel="tag"># 轻量级锁</a>
+              <a href="/tags/%E5%81%8F%E5%90%91%E9%94%81/" rel="tag"># 偏向锁</a>
+              <a href="/tags/heavyweight-lock/" rel="tag"># heavyweight lock</a>
+              <a href="/tags/lightweight-lock/" rel="tag"># lightweight lock</a>
+              <a href="/tags/biased-lock/" rel="tag"># biased lock</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/Synchronization-%E4%B8%AD%E8%8B%B1%E6%96%87%E5%AF%B9%E7%85%A7%E7%BF%BB%E8%AF%91/" rel="prev" title="Synchronization 中英文对照翻译">
+                  <i class="fa fa-chevron-left"></i> Synchronization 中英文对照翻译
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">YellowStar5</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : 'c7399bb9f366b510f657',
+      clientSecret: '952cfd3a5207d8ddfc497983491a1089cf2985c4',
+      repo        : 'gitalk',
+      owner       : 'codercuixin',
+      admin       : ['codercuixin'],
+      id          : '48a18799591ea1a1b01146ceb2b03bd4',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

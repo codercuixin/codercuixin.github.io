@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.1/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yellowstar5.cn","root":"/","scheme":"Muse","version":"8.0.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
+  </script>
+
+  <meta name="description" content="这个文章我们主要来说一下Consul的基本概念，以及其实现的内部原理，和Eureka的比较。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Consul 基本概念，同类比较和内部原理">
+<meta property="og:url" content="yellowstar5.cn/Consul%20%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5%EF%BC%8C%E5%90%8C%E7%B1%BB%E6%AF%94%E8%BE%83%E5%92%8C%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/index.html">
+<meta property="og:site_name" content="YellowStar5">
+<meta property="og:description" content="这个文章我们主要来说一下Consul的基本概念，以及其实现的内部原理，和Eureka的比较。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190607103459828.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190607112436458.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190601153218300.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70">
+<meta property="article:published_time" content="2019-06-07T04:08:51.000Z">
+<meta property="article:modified_time" content="2020-08-25T09:15:10.271Z">
+<meta property="article:author" content="YellowStar5">
+<meta property="article:tag" content="Consul">
+<meta property="article:tag" content="服务发现与注册">
+<meta property="article:tag" content="Gossip">
+<meta property="article:tag" content="Raft">
+<meta property="article:tag" content="Eureka">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://img-blog.csdnimg.cn/20190607103459828.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70">
+
+
+<link rel="canonical" href="yellowstar5.cn/Consul%20%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5%EF%BC%8C%E5%90%8C%E7%B1%BB%E6%AF%94%E8%BE%83%E5%92%8C%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Consul 基本概念，同类比较和内部原理 | YellowStar5</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">YellowStar5</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">风物长宜放眼量</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <section class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-%E4%BB%80%E4%B9%88%E6%98%AFConsul%EF%BC%9F"><span class="nav-number">1.</span> <span class="nav-text">1.什么是Consul？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1-Consul-%E4%B8%AD%E7%9A%84%E6%9C%AF%E8%AF%AD"><span class="nav-number">1.1.</span> <span class="nav-text">2.1 Consul 中的术语</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-2-%E4%B8%80%E4%B8%87%E8%8B%B1%E5%B0%BA%E7%9C%8BConsul"><span class="nav-number">1.2.</span> <span class="nav-text">2.2  一万英尺看Consul</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-Gossip%E5%8D%8F%E8%AE%AE%E5%92%8CRaft%E5%8D%8F%E8%AE%AE"><span class="nav-number">2.</span> <span class="nav-text">3. Gossip协议和Raft协议</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#3-1-%E5%85%AB%E5%8D%A6%E5%8D%8F%E8%AE%AEGossip-Protocol"><span class="nav-number">2.1.</span> <span class="nav-text">3.1 八卦协议Gossip Protocol</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-1-%E4%BB%80%E4%B9%88%E6%98%AFGossip-%E5%8D%8F%E8%AE%AE"><span class="nav-number">2.1.1.</span> <span class="nav-text">3.1.1 什么是Gossip 协议</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-2-Consul%E4%B8%AD%E7%9A%84%E5%85%AB%E5%8D%A6%E5%8D%8F%E8%AE%AE"><span class="nav-number">2.1.2.</span> <span class="nav-text">3.1.2 Consul中的八卦协议</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-2-Raft%E5%8D%8F%E8%AE%AE"><span class="nav-number">2.2.</span> <span class="nav-text">3.2 Raft协议</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-%E5%92%8CEureka%E7%9A%84%E6%AF%94%E8%BE%83"><span class="nav-number">3.</span> <span class="nav-text">4.和Eureka的比较</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5-%E5%8F%82%E8%80%83%EF%BC%9A"><span class="nav-number">4.</span> <span class="nav-text">5.参考：</span></a></li></ol></div>
+        </section>
+        <!--/noindex-->
+
+        <section class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">YellowStar5</p>
+  <div class="site-description" itemprop="description">Java后端程序员，想做个手艺人。</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">14</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">34</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://www.douban.com/people/146579421/" title="豆瓣 → https:&#x2F;&#x2F;www.douban.com&#x2F;people&#x2F;146579421&#x2F;" rel="noopener" target="_blank"><i class="fas fa-book-reader fa-fw"></i>豆瓣</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/codercuixin" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;codercuixin" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/u/5509464340" title="微博 → https:&#x2F;&#x2F;weibo.com&#x2F;u&#x2F;5509464340" rel="noopener" target="_blank"><i class="fab fa-weibo fa-fw"></i>微博</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://yellowstar5.cn/atom.xml" title="RSS → https:&#x2F;&#x2F;yellowstar5.cn&#x2F;atom.xml"><i class="fa fa-rss-square fa-fw"></i>RSS</a>
+      </span>
+  </div>
+
+
+
+        </section>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="yellowstar5.cn/Consul%20%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5%EF%BC%8C%E5%90%8C%E7%B1%BB%E6%AF%94%E8%BE%83%E5%92%8C%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="YellowStar5">
+      <meta itemprop="description" content="Java后端程序员，想做个手艺人。">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="YellowStar5">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Consul 基本概念，同类比较和内部原理
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-06-07 12:08:51" itemprop="dateCreated datePublished" datetime="2019-06-07T12:08:51+08:00">2019-06-07</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020-08-25 17:15:10" itemprop="dateModified" datetime="2020-08-25T17:15:10+08:00">2020-08-25</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Consul/" itemprop="url" rel="index"><span itemprop="name">Consul</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>这个文章我们主要来说一下Consul的基本概念，以及其实现的内部原理，和Eureka的比较。</p>
+<a id="more"></a>
+<h1 id="1-什么是Consul？"><a href="#1-什么是Consul？" class="headerlink" title="1.什么是Consul？"></a>1.什么是Consul？</h1><p>Consul是一种服务网格解决方案，提供具有服务发现，配置和分段功能的全功能控制平面。 这些功能中的每一个都可以根据需要单独使用，也可以一起使用以构建全服务网格。 Consul需要数据平面并支持代理和本机集成模型。 Consul附带一个简单的内置代理，因此一切都可以开箱即用，但也支持第三方代理集成，如Envoy。<br>Consul 提供的关键功能：</p>
+<ul>
+<li>服务发现：Consul的客户端可以注册服务，例如api或mysql，其他客户端可以使用Consul来发现给定服务的提供者。使用DNS或HTTP，应用程序可以轻松找到它们所依赖的服务。</li>
+<li>运行状况检查：Consul客户端可以提供任意数量的运行状况检查，这些检查与给定服务（“是Web服务器返回200 OK”）或本地节点（“内存利用率低于90％”）相关联。运营人员可以使用此信息来监控群集运行状况，服务发现组件使用此信息将流量路由到远离不健康主机的地方。</li>
+<li>KV 存储：应用程序可以将Consul的层级键/值存储用于任何目的，包括动态配置，功能标记，协调，领导者选举等。简单的HTTP API使其易于使用。</li>
+<li>安全服务通信：Consul可以为服务生成和分发TLS证书，以建立相互的TLS连接。<a target="_blank" rel="noopener" href="https://www.consul.io/docs/connect/intentions.html">Intentions</a>(意图）可用于定义允许哪些服务进行通信。可以使用可以实时更改的意图轻松管理服务分段，而不是使用复杂的网络拓扑和静态防火墙规则。</li>
+<li>多数据中心：Consul支持多个数据中心。这意味着Consul的用户不必担心构建额外的抽象层以扩展到多个区域。</li>
+</ul>
+<p>#2. Consul 的架构</p>
+<h2 id="2-1-Consul-中的术语"><a href="#2-1-Consul-中的术语" class="headerlink" title="2.1 Consul 中的术语"></a>2.1 Consul 中的术语</h2><p>在描述架构之前，我们提供术语表以帮助澄清正在讨论的内容：</p>
+<ul>
+<li><p>代理（agent） - 代理是Consul集群的每个成员上长时间运行的守护程序。它是通过运行consul agent 命令来启动的。代理能够以客户端或服务器模式运行。由于所有节点都必须运行代理，因此将节点称为客户端或服务器更简单，但代理还有其他实例。所有代理都可以运行DNS或HTTP接口，并负责运行检查并保持服务同步。</p>
+</li>
+<li><p>客户端模式（client agent） - 客户端是将所有RPC调用转发到服务器的代理。客户端是相对无状态的。客户端执行的唯一后台活动是参与LAN gossip pool（局域网 Gossip池）。这会花费非常非常小的资源并且仅消耗少量的网络带宽。</p>
+</li>
+<li><p>服务器模式(server agent) - 服务器是具有扩展责任的代理，包括参与Raft仲裁，维护群集状态，响应RPC查询，与其他数据中心交换WAN Gossip（广域网Gossip）以及将查询转发给领导者或远程数据中心。</p>
+</li>
+<li><p>数据中心 （datacenter）- 虽然数据中心的定义似乎很明显，但必须考虑细微的细节。例如，在EC2中，多个可用区域是否被视为包含单个数据中心？我们将数据中心定义为专用，低延迟和高带宽的网络环境。这排除了通过公共互联网的通信，但出于我们的目的，单个EC2区域内的多个可用区域将被视为单个数据中心的一部分。</p>
+</li>
+<li><p>共识 （consensus）- 在我们的文档中使用时，我们使用共识来表示对当选领导者的协议以及对交易顺序的协议。由于这些事务应用于<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Finite-state_machine">有限状态机</a>，因此我们对共识的定义意味着复制状态机的一致性。<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Consensus_%28computer_science%29">维基百科</a>上更详细地描述了共识，<a target="_blank" rel="noopener" href="https://www.consul.io/docs/internals/consensus.html">此处</a>描述了我们的实现。</p>
+</li>
+<li><p>Gossip - Consul建立在<a target="_blank" rel="noopener" href="https://www.serf.io/">Serf</a>之上，它提供了一个完整的<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Gossip_protocol">gossip 协议</a>（八卦协议Gossip协议），用于多种用途。 Serf提供成员维护，故障检测和事件广播。我们对这些的使用在八卦文档中有更多描述。Gossip参与随机的节点到节点的通信，主要是通过UDP。</p>
+</li>
+<li><p>LAN Gossip - 指局域网八卦池，其中包含位于同一局域网或数据中心的节点。</p>
+</li>
+<li><p>WAN Gossip - 指仅包含服务器（servers）的WAN八卦池。这些服务器主要位于不同的数据中心，通常通过互联网或广域网进行通信。</p>
+</li>
+<li><p>RPC - 远程过程调用。这是一种允许客户端发出服务器请求的请求/响应机制。</p>
+</li>
+</ul>
+<h2 id="2-2-一万英尺看Consul"><a href="#2-2-一万英尺看Consul" class="headerlink" title="2.2  一万英尺看Consul"></a>2.2  一万英尺看Consul</h2><p><img src="https://img-blog.csdnimg.cn/20190607103459828.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70" alt="Consul 架构图"><br>让我们分解这个图像并描述每一块。首先，我们可以看到有两个数据中心，标记为“one”和“two”。 Consul为多个数据中心提供一流的支持，并期望这是常见的情况。</p>
+<p>在每个数据中心内，我们都有客户端和服务端的混合体。<strong>预计有三到五台服务端。这在失败和性能的可用性之间取得平衡，因为随着更多机器的添加，共识逐渐变慢</strong>。但是，客户端数量没有限制，可以轻松扩展到数千或数万。</p>
+<p><strong>数据中心中的所有节点都参与八卦协议。</strong>这意味着有一个八卦池，其中包含给定数据中心的所有节点。这有几个目的：首先，不需要为客户端配置服务器的地址;发现是自动完成的。其次，检测节点故障的工作不是放在服务器上，而是分布式的。这使得故障检测比天真的心跳方案更具可扩展性。第三，它被用作消息传递层，用于在诸如领导者选举等重要事件发生时进行通知。</p>
+<p>每个数据中心中的服务器都是单个Raft对等集的一部分。这意味着他们共同选举一个leader，一个具有额外职责的选定服务器。<strong>领导者负责处理所有查询和交易。作为共识协议的一部分，还必须将事务复制到所有对等体。由于此要求，当非领导者服务器收到RPC请求时，它会将其转发给群集leader。</strong></p>
+<p><strong>服务器节点作为WAN八卦池的一部分运行</strong>。此池与LAN池不同，因为它针对较高的Internet延迟进行了优化，并且预计仅包含其他Consul服务器节点。此池的目的是允许数据中心以低触摸方式（low-touch manner)发现彼此。在线创建新的数据中心就像加入现有的WAN八卦池一样简单。由于服务器都在此池中运行，因此它还支持跨数据中心请求。<strong>当服务器收到对不同数据中心的请求时，它会将其转发到正确数据中心的随机服务器。然后该服务器可以转发给本地领导者</strong>。</p>
+<p>这导致数据中心之间的耦合非常低，但由于故障检测，连接缓存和多路复用，跨数据中心请求相对快速且可靠。</p>
+<p>通常，不会在不同的Consul数据中心之间复制数据。当对另一个数据中心中的资源发出请求时，本地Consul服务器会将RPC请求转发给该资源的远程Consul服务器并返回结果。如果远程数据中心不可用，那么这些资源也将不可用，但这不会影响本地数据中心。在某些特殊情况下，可以复制有限的数据子集，例如使用<a target="_blank" rel="noopener" href="https://learn.hashicorp.com/consul/day-2-operations/acl-replication">Consul的内置ACL</a>复制功能，或者像<a target="_blank" rel="noopener" href="https://github.com/hashicorp/consul-replicate">consul-replicate</a>这样的外部工具。</p>
+<p>在某些地方，客户端代理可以缓存来自服务器的数据，以使其在本地可用，以提高性能和可靠性。示例包括连接证书Connect certificates和意图intentions ，允许客户端代理在没有往返服务器的情况下做出有关入站连接请求的本地决策。某些API端点还支持可选的结果缓存。这有助于提高可靠性，因为本地代理可以继续响应某些查询，例如服务发现或从缓存连接授权，即使与服务器的连接中断或服务器暂时不可用。</p>
+<h1 id="3-Gossip协议和Raft协议"><a href="#3-Gossip协议和Raft协议" class="headerlink" title="3. Gossip协议和Raft协议"></a>3. Gossip协议和Raft协议</h1><p>要想理解Consul的原理，你是绕不过Gossip协议和Raft协议的。</p>
+<h2 id="3-1-八卦协议Gossip-Protocol"><a href="#3-1-八卦协议Gossip-Protocol" class="headerlink" title="3.1 八卦协议Gossip Protocol"></a>3.1 八卦协议Gossip Protocol</h2><h3 id="3-1-1-什么是Gossip-协议"><a href="#3-1-1-什么是Gossip-协议" class="headerlink" title="3.1.1 什么是Gossip 协议"></a>3.1.1 什么是Gossip 协议</h3><p>Gossip算法如其名，灵感来自办公室八卦，只要一个人八卦一下，在有限的时间内所有的人都会知道该八卦的信息，这种方式也与病毒传播类似，因此Gossip有众多的别名“闲话算法”、“疫情传播算法”、“病毒感染算法”、“谣言传播算法”。更多，可参见<a target="_blank" rel="noopener" href="https://www.cnblogs.com/xingzc/p/6165084.html">这篇博文</a></p>
+<h3 id="3-1-2-Consul中的八卦协议"><a href="#3-1-2-Consul中的八卦协议" class="headerlink" title="3.1.2 Consul中的八卦协议"></a>3.1.2 Consul中的八卦协议</h3><p>Consul使用两个不同的八卦池。我们将每个池分别称为LAN或WAN池。</p>
+<p>每个数据中心Consul都有一个LAN八卦池，包含数据中心的所有成员，包括客户端和服务器。 LAN池用于一些目的。成员资格信息允许客户端自动发现服务器，减少所需的配置量。分布式故障检测允许整个集群共享故障检测工作，而不是集中在少数服务器上。最后，八卦池允许为领导者选举等事件提供可靠和快速的事件广播。</p>
+<p>WAN池是全局唯一的，因为无论数据中心如何，所有服务器都应该参与WAN池。 WAN池提供的成员资格信息允许服务器执行跨数据中心请求。集成故障检测允许Consul优雅地处理丢失连接的整个数据中心，或者只处理远程数据中心中的单个服务器。</p>
+<p>所有这些功能都是通过利用<a target="_blank" rel="noopener" href="https://www.serf.io/">Serf</a>提供的。它用作嵌入式库以提供这些功能。从用户的角度来看，这并不重要，因为抽象应该由Consul掩盖。但是，作为开发人员，了解如何利用此库非常有用。</p>
+<h2 id="3-2-Raft协议"><a href="#3-2-Raft协议" class="headerlink" title="3.2 Raft协议"></a>3.2 Raft协议</h2><p>Raft 协议，主要负责leader选举和日志同步。<br>推荐你看一下<a target="_blank" rel="noopener" href="https://www.cnblogs.com/xybaby/p/10124083.html">这篇博客</a>，<br>你也可以到<a target="_blank" rel="noopener" href="http://thesecretlivesofdata.com/raft/">这个网站</a>通过动画的方式，像玩游戏一样在线体验raft协议的原理。</p>
+<h1 id="4-和Eureka的比较"><a href="#4-和Eureka的比较" class="headerlink" title="4.和Eureka的比较"></a>4.和Eureka的比较</h1><p>Eureka因为是Netflix OSS套件的一部分，2.x停止维护，不过1.x仍然是活跃的。<br><img src="https://img-blog.csdnimg.cn/20190607112436458.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>这里重点说下consul与Eureka的区别。和其他系统的比较，可<a target="_blank" rel="noopener" href="https://www.consul.io/intro/vs/index.html">点击此网址自行查看。</a></p>
+<p>Eureka是一种服务发现工具。该体系结构主要是客户端/服务器，每个数据中心有一组Eureka服务器，通常每个可用区域一个。通常，Eureka的客户使用嵌入式SDK来注册和发现服务。对于非本地集成的客户端，使用Ribbon等边车通过Eureka透明地发现服务。</p>
+<p><strong>Eureka使用尽力而为的复制提供弱一致的服务视图。当客户端向服务器注册时，该服务器将尝试复制到其他服务器但不提供保证</strong>。服务注册的生存时间（TTL)很短，要求客户端对服务器进行心跳检测。不健康的服务或节点停止心跳后，导致它们超时并从注册表中删除。发现请求可以路由到任何服务，由于尽力复制，这些服务可以提供过时或丢失的数据。这种简化的模型可以实现轻松的集群管理和高可扩展性。</p>
+<p><strong>Consul提供了一系列超级功能，包括更丰富的健康检查，键/值存储和多数据中心感知</strong>。 Consul需要每个数据中心中的一组服务器，以及每个客户端上的代理，类似于使用像Ribbon这样的边车。 Consul代理允许大多数应用程序不知道Consul，通过配置文件执行服务注册以及通过DNS或负载平衡器sidecars进行发现。</p>
+<p><strong>Consul提供强一致性保证，因为服务器使用Raft协议复制状态</strong>。 Consul支持丰富的运行状况检查，包括TCP，HTTP，Nagios / Sensu兼容脚本或基于Ture的Eureka。客户端节点参与基于八卦的健康检查，该检查分发健康检查的工作，而不像集中式心跳，这成为可扩展性挑战。发现请求被路由到当选的领事领导者，这允许他们默认情况下是强烈一致的。允许过时读取的客户端允许任何服务器处理其请求，从而允许像Eureka一样的线性可伸缩性。</p>
+<p><strong>Consul的强一致性意味着它可以用作领导者选举和集群协调的锁服务。 Eureka不提供类似的保证，并且通常需要为需要执行协调或具有更强一致性需求的服务运行ZooKeeper。</strong></p>
+<p>Consul提供了支持面向服务的体系结构所需的功能工具包。这包括服务发现，还包括丰富的运行状况检查，锁定，键/值，多数据中心联合，事件系统和ACL。 Consul和consul-template和envconsul等生态系统工具都试图最大限度地减少集成所需的应用程序更改，以避免需要通过SDK进行本机集成。 Eureka是更大的Netflix OSS套件的一部分，该套件期望应用程序相对同质且紧密集成。因此，Eureka只解决了有限的一部分问题，期望其他工具如ZooKeeper可以同时使用。</p>
+<p>总结一下上面的几段话：</p>
+<ul>
+<li>Consul 通过Raft协议提供强一致性，而Eureka提供的弱一致性。</li>
+<li>Consul 通过Gossip协议更好分发健康检查的工作，而不是Eureka集中式心跳（要客户端不停地请求服务端）</li>
+<li>由于Raft提供的强一致性，Consul可以用来做领导选择，集群协议的锁服务，而Eureka只能借助于Zookeeper。</li>
+</ul>
+<p>另外，Spring Cloud官方提供对Consul的支持，网址是<a target="_blank" rel="noopener" href="https://spring.io/projects/spring-cloud-consul%EF%BC%8C%E5%90%8E%E9%9D%A2%E6%88%91%E4%BC%9A%E5%86%99%E6%96%87%E7%AB%A0%E5%85%B7%E4%BD%93%E7%9A%84%E4%BD%BF%E7%94%A8%E3%80%82">https://spring.io/projects/spring-cloud-consul，后面我会写文章具体的使用。</a></p>
+<h1 id="5-参考："><a href="#5-参考：" class="headerlink" title="5.参考："></a>5.参考：</h1><p><a target="_blank" rel="noopener" href="https://www.consul.io/intro/index.html">https://www.consul.io/intro/index.html</a><br><a target="_blank" rel="noopener" href="https://www.consul.io/intro/vs/eureka.html">https://www.consul.io/intro/vs/eureka.html</a><br><a target="_blank" rel="noopener" href="https://www.consul.io/docs/internals/architecture.html">https://www.consul.io/docs/internals/architecture.html</a><br><a target="_blank" rel="noopener" href="https://www.consul.io/docs/internals/consensus.html">https://www.consul.io/docs/internals/consensus.html</a><br><a target="_blank" rel="noopener" href="https://www.consul.io/docs/internals/gossip.html">https://www.consul.io/docs/internals/gossip.html</a><br><a target="_blank" rel="noopener" href="https://www.cnblogs.com/xingzc/p/6165084.html">https://www.cnblogs.com/xingzc/p/6165084.html</a><br><a target="_blank" rel="noopener" href="https://www.cnblogs.com/xybaby/p/10124083.html">https://www.cnblogs.com/xybaby/p/10124083.html</a></p>
+<p>文章之后会第一时间发于微信， 欢迎关注我的微信公众号，大家一起交流学习<br><img src="https://img-blog.csdnimg.cn/20190601153218300.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Consul/" rel="tag"># Consul</a>
+              <a href="/tags/%E6%9C%8D%E5%8A%A1%E5%8F%91%E7%8E%B0%E4%B8%8E%E6%B3%A8%E5%86%8C/" rel="tag"># 服务发现与注册</a>
+              <a href="/tags/Gossip/" rel="tag"># Gossip</a>
+              <a href="/tags/Raft/" rel="tag"># Raft</a>
+              <a href="/tags/Eureka/" rel="tag"># Eureka</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/Consul%20ACL%E9%9B%86%E7%BE%A4%E9%85%8D%E7%BD%AE%E8%AF%B4%E6%98%8E%E4%BB%A5%E5%8F%8AACL%20Token%E7%9A%84%E7%94%A8%E6%B3%95/" rel="prev" title="Consul ACL集群配置说明以及ACL Token的用法">
+                  <i class="fa fa-chevron-left"></i> Consul ACL集群配置说明以及ACL Token的用法
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/Consul%20%E5%91%BD%E4%BB%A4%E8%A1%8C%E6%9C%80%E5%85%A8%E6%96%87%E6%A1%A3/" rel="next" title="Consul 命令行最全文档">
+                  Consul 命令行最全文档 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">YellowStar5</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : 'c7399bb9f366b510f657',
+      clientSecret: '952cfd3a5207d8ddfc497983491a1089cf2985c4',
+      repo        : 'gitalk',
+      owner       : 'codercuixin',
+      admin       : ['codercuixin'],
+      id          : '80b3b5b2dc2976cc7d1667a74f91233a',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

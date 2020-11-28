@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.1/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yellowstar5.cn","root":"/","scheme":"Muse","version":"8.0.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
+  </script>
+
+  <meta name="description" content="这篇文章的目的：搭建带有ACL控制的consul1.5集群。具体概念及配置说明，后面我会再写文章补充说明。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Consul 集群带ACL控制搭建">
+<meta property="og:url" content="yellowstar5.cn/Consul%20%E9%9B%86%E7%BE%A4%E5%B8%A6ACL%E6%8E%A7%E5%88%B6%E6%90%AD%E5%BB%BA/index.html">
+<meta property="og:site_name" content="YellowStar5">
+<meta property="og:description" content="这篇文章的目的：搭建带有ACL控制的consul1.5集群。具体概念及配置说明，后面我会再写文章补充说明。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190601131112261.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190601131444965.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190601131940545.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190601132708134.png">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190601133315929.png">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190601133948715.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190601153218300.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70">
+<meta property="article:published_time" content="2019-06-01T05:47:13.000Z">
+<meta property="article:modified_time" content="2020-08-25T09:15:25.003Z">
+<meta property="article:author" content="YellowStar5">
+<meta property="article:tag" content="Consul">
+<meta property="article:tag" content="ACL Token">
+<meta property="article:tag" content="服务发现与注册">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://img-blog.csdnimg.cn/20190601131112261.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70">
+
+
+<link rel="canonical" href="yellowstar5.cn/Consul%20%E9%9B%86%E7%BE%A4%E5%B8%A6ACL%E6%8E%A7%E5%88%B6%E6%90%AD%E5%BB%BA/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Consul 集群带ACL控制搭建 | YellowStar5</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">YellowStar5</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">风物长宜放眼量</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <section class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-%E6%9C%BA%E5%99%A8%E8%A7%84%E5%88%92"><span class="nav-number">1.</span> <span class="nav-text">1.机器规划</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-%E5%85%88%E9%85%8D%E7%BD%AE%E5%A5%BD%E4%B8%89%E4%B8%AAServer%EF%BC%8C%E5%B9%B6%E5%90%AF%E5%8A%A8%E4%B8%80%E9%81%8D%E3%80%82"><span class="nav-number">2.</span> <span class="nav-text">2.先配置好三个Server，并启动一遍。</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-%E7%94%9F%E6%88%90%E5%B9%B6%E9%85%8D%E7%BD%AEagent-token%EF%BC%8C%E8%A7%A3%E5%86%B3server-agent-ACL-block%E9%97%AE%E9%A2%98"><span class="nav-number">3.</span> <span class="nav-text">3.生成并配置agent-token，解决server agent ACL block问题</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-%E5%90%AF%E5%8A%A8%E4%B8%80%E4%B8%AA%E5%B8%A6ui%E7%9A%84client-agent"><span class="nav-number">4.</span> <span class="nav-text">4.启动一个带ui的client agent</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5-%E9%85%8D%E7%BD%AE%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E3%80%82"><span class="nav-number">5.</span> <span class="nav-text">5.配置环境变量。</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#6-%E7%BB%99web-ui-%E8%AE%BE%E7%BD%AEmaster-token"><span class="nav-number">6.</span> <span class="nav-text">6.给web-ui 设置master_token</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#7-%E5%8F%82%E8%80%83%E6%96%87%E7%AB%A0"><span class="nav-number">7.</span> <span class="nav-text">7.参考文章</span></a></li></ol></div>
+        </section>
+        <!--/noindex-->
+
+        <section class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">YellowStar5</p>
+  <div class="site-description" itemprop="description">Java后端程序员，想做个手艺人。</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">14</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">34</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://www.douban.com/people/146579421/" title="豆瓣 → https:&#x2F;&#x2F;www.douban.com&#x2F;people&#x2F;146579421&#x2F;" rel="noopener" target="_blank"><i class="fas fa-book-reader fa-fw"></i>豆瓣</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/codercuixin" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;codercuixin" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/u/5509464340" title="微博 → https:&#x2F;&#x2F;weibo.com&#x2F;u&#x2F;5509464340" rel="noopener" target="_blank"><i class="fab fa-weibo fa-fw"></i>微博</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://yellowstar5.cn/atom.xml" title="RSS → https:&#x2F;&#x2F;yellowstar5.cn&#x2F;atom.xml"><i class="fa fa-rss-square fa-fw"></i>RSS</a>
+      </span>
+  </div>
+
+
+
+        </section>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="yellowstar5.cn/Consul%20%E9%9B%86%E7%BE%A4%E5%B8%A6ACL%E6%8E%A7%E5%88%B6%E6%90%AD%E5%BB%BA/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="YellowStar5">
+      <meta itemprop="description" content="Java后端程序员，想做个手艺人。">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="YellowStar5">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Consul 集群带ACL控制搭建
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-06-01 13:47:13" itemprop="dateCreated datePublished" datetime="2019-06-01T13:47:13+08:00">2019-06-01</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020-08-25 17:15:25" itemprop="dateModified" datetime="2020-08-25T17:15:25+08:00">2020-08-25</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Consul/" itemprop="url" rel="index"><span itemprop="name">Consul</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>这篇文章的目的：搭建带有ACL控制的consul1.5集群。<br>具体概念及配置说明，后面我会再写文章补充说明。</p>
+<a id="more"></a>
+
+<h1 id="1-机器规划"><a href="#1-机器规划" class="headerlink" title="1.机器规划"></a>1.机器规划</h1><p>我这里起了四台虚拟机，三台用作Server agent，一台用作Client agent。（说明：当然Client可以配置多个，这里由于开太多虚拟机比较耗费资源，就只设置了一个。）</p>
+<table>
+<thead>
+<tr>
+<th>机器ip(机器名)</th>
+<th>http端口（其他端口使用默认值）</th>
+<th>Agent类型</th>
+<th>节点名称</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>10.211.55.28 node1</td>
+<td>8500</td>
+<td>server</td>
+<td>consul-server1</td>
+</tr>
+<tr>
+<td>10.211.55.25 node2</td>
+<td>8500</td>
+<td>server</td>
+<td>consul-server2</td>
+</tr>
+<tr>
+<td>10.211.55.26  node3</td>
+<td>8500</td>
+<td>server</td>
+<td>consul-server3</td>
+</tr>
+<tr>
+<td>10.211.55.27  node4</td>
+<td>7110</td>
+<td>client 带ui</td>
+<td>consul-client1</td>
+</tr>
+</tbody></table>
+<h1 id="2-先配置好三个Server，并启动一遍。"><a href="#2-先配置好三个Server，并启动一遍。" class="headerlink" title="2.先配置好三个Server，并启动一遍。"></a>2.先配置好三个Server，并启动一遍。</h1><p>consul-server1.json</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    &quot;datacenter&quot;:&quot;dc1&quot;,</span><br><span class="line">    &quot;primary_datacenter&quot;:&quot;dc1&quot;,</span><br><span class="line">    &quot;bootstrap_expect&quot;:1,</span><br><span class="line">    &quot;start_join&quot;:[</span><br><span class="line">        &quot;10.211.55.25&quot;,</span><br><span class="line">        &quot;10.211.55.26&quot;</span><br><span class="line">    ],</span><br><span class="line">    &quot;retry_join&quot;:[</span><br><span class="line">        &quot;10.211.55.25&quot;,</span><br><span class="line">        &quot;10.211.55.26&quot;</span><br><span class="line">    ],</span><br><span class="line">    &quot;advertise_addr&quot;: &quot;10.211.55.28&quot;,</span><br><span class="line">    &quot;bind_addr&quot;: &quot;10.211.55.28&quot;,</span><br><span class="line">    &quot;server&quot;:true,</span><br><span class="line">    &quot;connect&quot;:&#123;</span><br><span class="line">        &quot;enabled&quot;:true</span><br><span class="line">    &#125;,</span><br><span class="line">    &quot;node_name&quot;:&quot;consul-server1&quot;,</span><br><span class="line">    &quot;data_dir&quot;:&quot;&#x2F;opt&#x2F;consul&#x2F;data&#x2F;&quot;,</span><br><span class="line">    &quot;enable_script_checks&quot;:false,</span><br><span class="line">    &quot;enable_local_script_checks&quot;:true,</span><br><span class="line">    &quot;log_file&quot;:&quot;&#x2F;opt&#x2F;consul&#x2F;log&#x2F;&quot;,</span><br><span class="line">    &quot;log_level&quot;:&quot;info&quot;,</span><br><span class="line">    &quot;log_rotate_bytes&quot;:100000000,</span><br><span class="line">    &quot;log_rotate_duration&quot;:&quot;24h&quot;,</span><br><span class="line">    &quot;encrypt&quot;:&quot;krCysDJnrQ8dtA7AbJav8g&#x3D;&#x3D;&quot;,</span><br><span class="line">    &quot;acl&quot;:&#123;</span><br><span class="line">        &quot;enabled&quot;:true,</span><br><span class="line">        &quot;default_policy&quot;:&quot;deny&quot;,</span><br><span class="line">        &quot;enable_token_persistence&quot;:true,</span><br><span class="line">        &quot;tokens&quot;:&#123;</span><br><span class="line">            &quot;master&quot;:&quot;cd76a0f7-5535-40cc-8696-073462acc6c7&quot;</span><br><span class="line">           &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<p>consul-server2.json</p>
+<pre><code>&#123;
+    &quot;datacenter&quot;:&quot;dc1&quot;,
+    &quot;primary_datacenter&quot;:&quot;dc1&quot;,
+    &quot;advertise_addr&quot;:  &quot;10.211.55.25&quot;,
+    &quot;bind_addr&quot;: &quot;10.211.55.25&quot;,
+    &quot;server&quot;:true,
+    &quot;connect&quot;:&#123;
+        &quot;enabled&quot;:true
+    &#125;,
+    &quot;node_name&quot;:&quot;consul-server2&quot;,
+    &quot;data_dir&quot;:&quot;/opt/consul/data/&quot;,
+    &quot;enable_script_checks&quot;:false,
+    &quot;enable_local_script_checks&quot;:true,
+    &quot;log_file&quot;:&quot;/opt/consul/log/&quot;,
+    &quot;log_level&quot;:&quot;info&quot;,
+    &quot;log_rotate_bytes&quot;:100000000,
+    &quot;log_rotate_duration&quot;:&quot;24h&quot;,
+    &quot;encrypt&quot;:&quot;krCysDJnrQ8dtA7AbJav8g==&quot;,
+    &quot;acl&quot;:&#123;
+        &quot;enabled&quot;:true,
+        &quot;default_policy&quot;:&quot;deny&quot;,
+        &quot;enable_token_persistence&quot;:true,
+        &quot;tokens&quot;:&#123;
+            &quot;master&quot;:&quot;cd76a0f7-5535-40cc-8696-073462acc6c7&quot;
+        &#125;
+    &#125;
+&#125;</code></pre>
+<p>consul-server3.json</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    &quot;datacenter&quot;:&quot;dc1&quot;,</span><br><span class="line">    &quot;primary_datacenter&quot;:&quot;dc1&quot;,</span><br><span class="line">    &quot;advertise_addr&quot;:&quot;10.211.55.26&quot;,</span><br><span class="line">    &quot;bind_addr&quot;:&quot;10.211.55.26&quot;,</span><br><span class="line">    &quot;server&quot;:true,</span><br><span class="line">    &quot;connect&quot;:&#123;</span><br><span class="line">        &quot;enabled&quot;:true</span><br><span class="line">    &#125;,</span><br><span class="line">    &quot;node_name&quot;:&quot;consul-server3&quot;,</span><br><span class="line">    &quot;data_dir&quot;:&quot;&#x2F;opt&#x2F;consul&#x2F;data&#x2F;&quot;,</span><br><span class="line">    &quot;enable_script_checks&quot;:false,</span><br><span class="line">    &quot;enable_local_script_checks&quot;:true,</span><br><span class="line">    &quot;log_file&quot;:&quot;&#x2F;opt&#x2F;consul&#x2F;log&#x2F;&quot;,</span><br><span class="line">    &quot;log_level&quot;:&quot;info&quot;,</span><br><span class="line">    &quot;log_rotate_bytes&quot;:100000000,</span><br><span class="line">    &quot;log_rotate_duration&quot;:&quot;24h&quot;,</span><br><span class="line">    &quot;encrypt&quot;:&quot;krCysDJnrQ8dtA7AbJav8g&#x3D;&#x3D;&quot;,</span><br><span class="line">    &quot;acl&quot;:&#123;</span><br><span class="line">        &quot;enabled&quot;:true,</span><br><span class="line">        &quot;default_policy&quot;:&quot;deny&quot;,</span><br><span class="line">        &quot;enable_token_persistence&quot;:true,</span><br><span class="line">        &quot;tokens&quot;:&#123;</span><br><span class="line">            &quot;master&quot;:&quot;cd76a0f7-5535-40cc-8696-073462acc6c7&quot;</span><br><span class="line">           &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>可以看到，consul-server2和consul-server3的配置类似，只是换了下ip和端口；另外consul-server1主要是多了开始连接和重试连接等配置。<br>接着，启动集群：<br>在机器10.2111.55.25 （node2)上执行，./consul agent -config-file start-conf/consul-server2.json<br>在机器10.2111.55.26 （node3)上执行，./consul agent -config-file start-conf/consul-server3.json<br>在机器10.2111.55.28 （node1)上执行，./consul agent -config-file start-conf/consul-server1.json</p>
+<h1 id="3-生成并配置agent-token，解决server-agent-ACL-block问题"><a href="#3-生成并配置agent-token，解决server-agent-ACL-block问题" class="headerlink" title="3.生成并配置agent-token，解决server agent ACL block问题"></a>3.生成并配置agent-token，解决server agent ACL block问题</h1><p>当上面的语句执行完之后，会发现协调更新由于ACL被阻塞。如下图：<br><img src="https://img-blog.csdnimg.cn/20190601131112261.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>经过查看官方文档，发现是由于未生成和配置agent-token导致。</p>
+<p>在任意一台server上执行下面的语句来生成agent-token：</p>
+<pre><code>curl \
+    --request PUT \
+    --header &quot;X-Consul-Token: cd76a0f7-5535-40cc-8696-073462acc6c7&quot; \
+    --data \
+&#39;&#123;
+  &quot;Name&quot;: &quot;Agent Token&quot;,
+  &quot;Type&quot;: &quot;client&quot;,
+  &quot;Rules&quot;: &quot;node \&quot;\&quot; &#123; policy = \&quot;write\&quot; &#125; service \&quot;\&quot; &#123; policy = \&quot;read\&quot; &#125;&quot;
+&#125;&#39; http://127.0.0.1:8500/v1/acl/create</code></pre>
+<p>此时会返回生成的agent-token<br><img src="https://img-blog.csdnimg.cn/20190601131444965.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>将生成的agent_token设置到每个server agent的配置文件中。<br>此时consul-server1.json, consul-server2.json, consul-server3.json中acl部分就变为：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">&quot;acl&quot;:&#123;</span><br><span class="line">        &quot;enabled&quot;:true,</span><br><span class="line">        &quot;default_policy&quot;:&quot;deny&quot;,</span><br><span class="line">        &quot;enable_token_persistence&quot;:true,</span><br><span class="line">        &quot;tokens&quot;:&#123;</span><br><span class="line">            &quot;master&quot;:&quot;cd76a0f7-5535-40cc-8696-073462acc6c7&quot;,</span><br><span class="line">             &quot;agent&quot;:&quot;deaa315d-98c5-b9f6-6519-4c8f6574a551&quot;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>也就是多了agent这个配置。</p>
+<p>接着一次重启各个server agent（把之前的进程先停掉）<br>在机器10.2111.55.25 （node2)上执行，./consul agent -config-file start-conf/consul-server2.json<br>在机器10.2111.55.26 （node3)上执行，./consul agent -config-file start-conf/consul-server3.json<br>在机器10.2111.55.28 （node1)上执行，./consul agent -config-file start-conf/consul-server1.json</p>
+<p>等server agent集群稳定下来之后，我们会看到之前的ACL block已经解决。<br><img src="https://img-blog.csdnimg.cn/20190601131940545.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h1 id="4-启动一个带ui的client-agent"><a href="#4-启动一个带ui的client-agent" class="headerlink" title="4.启动一个带ui的client agent"></a>4.启动一个带ui的client agent</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    &quot;datacenter&quot;:&quot;dc1&quot;,</span><br><span class="line">    &quot;primary_datacenter&quot;:&quot;dc1&quot;,</span><br><span class="line">    &quot;advertise_addr&quot;: &quot;10.211.55.27&quot;,</span><br><span class="line">    &quot;start_join&quot;:[</span><br><span class="line">         &quot;10.211.55.25&quot;,</span><br><span class="line">        &quot;10.211.55.26&quot;,</span><br><span class="line">        &quot;10.211.55.28&quot;</span><br><span class="line">    ],</span><br><span class="line">    &quot;retry_join&quot;:[</span><br><span class="line">         &quot;10.211.55.25&quot;,</span><br><span class="line">        &quot;10.211.55.26&quot;,</span><br><span class="line">        &quot;10.211.55.28&quot;</span><br><span class="line">    ],</span><br><span class="line">    &quot;bind_addr&quot;:&quot;10.211.55.27&quot;,</span><br><span class="line">    &quot;node_name&quot;:&quot;consul-client1&quot;,</span><br><span class="line">    &quot;client_addr&quot;:&quot;0.0.0.0&quot;,</span><br><span class="line">    &quot;connect&quot;:&#123;</span><br><span class="line">        &quot;enabled&quot;:true</span><br><span class="line">    &#125;,</span><br><span class="line">    &quot;data_dir&quot;:&quot;&#x2F;opt&#x2F;consul&#x2F;data&#x2F;&quot;,</span><br><span class="line">    &quot;log_file&quot;:&quot;&#x2F;opt&#x2F;consul&#x2F;log&#x2F;&quot;,</span><br><span class="line">    &quot;log_level&quot;:&quot;info&quot;,</span><br><span class="line">    &quot;log_rotate_bytes&quot;:100000000,</span><br><span class="line">    &quot;log_rotate_duration&quot;:&quot;24h&quot;,</span><br><span class="line">    &quot;encrypt&quot;:&quot;krCysDJnrQ8dtA7AbJav8g&#x3D;&#x3D;&quot;,</span><br><span class="line">    &quot;ui&quot;:true,</span><br><span class="line">    &quot;enable_script_checks&quot;:false,</span><br><span class="line">    &quot;enable_local_script_checks&quot;:true,</span><br><span class="line">    &quot;disable_remote_exec&quot;:true,</span><br><span class="line">    &quot;ports&quot;:&#123;</span><br><span class="line">        &quot;http&quot;:7110</span><br><span class="line">    &#125;,</span><br><span class="line">    &quot;acl&quot;:&#123;</span><br><span class="line">        &quot;enabled&quot;:true,</span><br><span class="line">        &quot;default_policy&quot;:&quot;deny&quot;,</span><br><span class="line">        &quot;enable_token_persistence&quot;:true,</span><br><span class="line">        &quot;tokens&quot;:&#123;</span><br><span class="line">	    &quot;agent&quot;:&quot;deaa315d-98c5-b9f6-6519-4c8f6574a551&quot;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>上面的配置主要是多了ui，表明带web-ui（可以在浏览器中查看）。<br>另外也是设置了第三步中生成的agent token。<br>在机器10.2111.55.27 （node4)上执行，./consul agent -config-file start-conf/consul-client1.json</p>
+<h1 id="5-配置环境变量。"><a href="#5-配置环境变量。" class="headerlink" title="5.配置环境变量。"></a>5.配置环境变量。</h1><p>经过前面一番配置，本以为已经搞定了所有东西，此时只想摸摸自己帅气的头发。<br>可一执行./consul members， 想看看我这里都有哪些成员，居然发现一个都没有<br><img src="https://img-blog.csdnimg.cn/20190601132708134.png" alt="在这里插入图片描述"><br>经过查看官方文档及搜索，发现是没有配置环境变量导致。<br><strong>1.给三个server的环境变量添加CONSUL_HTTP_TOKEN, vim /etc/profile添加下面一句</strong></p>
+<pre><code>export CONSUL_HTTP_TOKEN=cd76a0f7-5535-40cc-8696-073462acc6c7</code></pre>
+<p>然后，source /etc/profile一下。<br>为了简单方便，我这里配了最大的权限即master_token<br>此时发现./consul members已经有数据了<br><img src="https://img-blog.csdnimg.cn/20190601133315929.png" alt="在这里插入图片描述"><br><strong>2.给client agent 设置环境变量</strong><br>由于client agent 带web-ui，这里你的公司不一定对外开放8500端口，所以我这里把它改成了7110，方便在外网查看。<br>不过此时需要添加一个环境变量CONSUL_HTTP_ADDR，来告诉命令行不是使用默认的127.0.0.1:8500<br>更改client-agent的环境变量,在最后添加下面两行</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">#consul http-token</span><br><span class="line">export CONSUL_HTTP_TOKEN&#x3D;cd76a0f7-5535-40cc-8696-073462acc6c7</span><br><span class="line">#only consul-client1 need, because http port has changed to 7110</span><br><span class="line">export CONSUL_HTTP_ADDR&#x3D;127.0.0.1:7110</span><br></pre></td></tr></table></figure>
+<p>此时发现在client agent上执行./consul members也是ok的。</p>
+<h1 id="6-给web-ui-设置master-token"><a href="#6-给web-ui-设置master-token" class="headerlink" title="6.给web-ui 设置master_token"></a>6.给web-ui 设置master_token</h1><p>在client-agent上，输入127.0.0.1:7110, 点击ACL， 输入master-token即可。如下图：</p>
+<p><img src="https://img-blog.csdnimg.cn/20190601133948715.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h1 id="7-参考文章"><a href="#7-参考文章" class="headerlink" title="7.参考文章"></a>7.参考文章</h1><p><a target="_blank" rel="noopener" href="https://www.consul.io/docs/acl/acl-legacy.html#bootstrapping-acls">https://www.consul.io/docs/acl/acl-legacy.html#bootstrapping-acls</a><br><a target="_blank" rel="noopener" href="https://www.consul.io/docs/agent/options.html">https://www.consul.io/docs/agent/options.html</a><br><a target="_blank" rel="noopener" href="https://www.consul.io/docs/commands/index.html#environment-variables">https://www.consul.io/docs/commands/index.html#environment-variables</a></p>
+<p>文章之后会第一时间发于微信， 欢迎关注我的微信公众号，大家一起交流学习<br><img src="https://img-blog.csdnimg.cn/20190601153218300.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Consul/" rel="tag"># Consul</a>
+              <a href="/tags/ACL-Token/" rel="tag"># ACL Token</a>
+              <a href="/tags/%E6%9C%8D%E5%8A%A1%E5%8F%91%E7%8E%B0%E4%B8%8E%E6%B3%A8%E5%86%8C/" rel="tag"># 服务发现与注册</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/Oracle-ROWNUM-%E4%BD%A0%E6%89%80%E9%9C%80%E8%A6%81%E7%9F%A5%E9%81%93%E7%9A%84%E4%B8%80%E5%88%87/" rel="prev" title="Oracle ROWNUM 你所需要知道的一切">
+                  <i class="fa fa-chevron-left"></i> Oracle ROWNUM 你所需要知道的一切
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/Consul%20ACL%E9%9B%86%E7%BE%A4%E9%85%8D%E7%BD%AE%E8%AF%B4%E6%98%8E%E4%BB%A5%E5%8F%8AACL%20Token%E7%9A%84%E7%94%A8%E6%B3%95/" rel="next" title="Consul ACL集群配置说明以及ACL Token的用法">
+                  Consul ACL集群配置说明以及ACL Token的用法 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">YellowStar5</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : 'c7399bb9f366b510f657',
+      clientSecret: '952cfd3a5207d8ddfc497983491a1089cf2985c4',
+      repo        : 'gitalk',
+      owner       : 'codercuixin',
+      admin       : ['codercuixin'],
+      id          : 'e99fec7cfed8a315533293d77bfe912a',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

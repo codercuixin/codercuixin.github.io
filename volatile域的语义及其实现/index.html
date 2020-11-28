@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.1/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yellowstar5.cn","root":"/","scheme":"Muse","version":"8.0.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
+  </script>
+
+  <meta name="description" content="0.背景-缓存一致性根据维基百科的定义：在一个共享内存多处理器系统中，每个处理器都有一个单独的缓存，可以有很多共享数据副本：一个在主内存中，一个在每个请求它的处理器的本地缓存中。 当一个数据副本被更改时，其他副本必须反映该更改。 缓存一致性是确保共享操作数（数据）值的更改及时在整个系统中传播的学科。下面图1是缓存不一致的示例图，图2是缓存一致的示例图">
+<meta property="og:type" content="article">
+<meta property="og:title" content="volatile域的语义及其实现">
+<meta property="og:url" content="yellowstar5.cn/volatile%E5%9F%9F%E7%9A%84%E8%AF%AD%E4%B9%89%E5%8F%8A%E5%85%B6%E5%AE%9E%E7%8E%B0/index.html">
+<meta property="og:site_name" content="YellowStar5">
+<meta property="og:description" content="0.背景-缓存一致性根据维基百科的定义：在一个共享内存多处理器系统中，每个处理器都有一个单独的缓存，可以有很多共享数据副本：一个在主内存中，一个在每个请求它的处理器的本地缓存中。 当一个数据副本被更改时，其他副本必须反映该更改。 缓存一致性是确保共享操作数（数据）值的更改及时在整个系统中传播的学科。下面图1是缓存不一致的示例图，图2是缓存一致的示例图">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200808205610441.gif">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200808205717500.gif">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200807165754442.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200808223203146.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/2020080717165986.png">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200807171750857.png">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/2020080717214781.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70">
+<meta property="article:published_time" content="2020-08-08T13:58:13.000Z">
+<meta property="article:modified_time" content="2020-08-25T09:16:55.679Z">
+<meta property="article:author" content="YellowStar5">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="Java内存模型">
+<meta property="article:tag" content="JMM">
+<meta property="article:tag" content="memory barrier">
+<meta property="article:tag" content="volatile">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://img-blog.csdnimg.cn/20200808205610441.gif">
+
+
+<link rel="canonical" href="yellowstar5.cn/volatile%E5%9F%9F%E7%9A%84%E8%AF%AD%E4%B9%89%E5%8F%8A%E5%85%B6%E5%AE%9E%E7%8E%B0/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>volatile域的语义及其实现 | YellowStar5</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">YellowStar5</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">风物长宜放眼量</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <section class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#0-%E8%83%8C%E6%99%AF-%E7%BC%93%E5%AD%98%E4%B8%80%E8%87%B4%E6%80%A7"><span class="nav-number">1.</span> <span class="nav-text">0.背景-缓存一致性</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#1-JMM%E6%8F%90%E4%BE%9B%E7%9A%84volatile%E5%9F%9F%E7%9A%84%E8%AF%AD%E4%B9%89"><span class="nav-number">2.</span> <span class="nav-text">1.JMM提供的volatile域的语义</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-1-%E5%8F%AF%E8%A7%81%E6%80%A7"><span class="nav-number">2.1.</span> <span class="nav-text">1.1 可见性</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-2-%E9%87%8D%E6%8E%92%E5%BA%8F%E9%99%90%E5%88%B6"><span class="nav-number">2.2.</span> <span class="nav-text">1.2. 重排序限制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-3-%E5%A6%82%E6%9E%9Cx%E4%B8%BAvolatile%E5%9F%9F%EF%BC%8C%E9%82%A3%E4%B9%88x-%E6%98%AF%E5%8E%9F%E5%AD%90%E6%93%8D%E4%BD%9C%E5%90%97%EF%BC%9F"><span class="nav-number">2.3.</span> <span class="nav-text">1.3.如果x为volatile域，那么x++ 是原子操作吗？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-3-1-%E4%B8%8E%E9%A2%84%E6%9C%9F%E4%B8%8D%E7%AC%A6"><span class="nav-number">2.3.1.</span> <span class="nav-text">1.3.1 与预期不符</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-3-2-jvm%E6%8C%87%E4%BB%A4%E5%B1%82%E9%9D%A2%E7%9C%8B%E7%9C%8Bx"><span class="nav-number">2.3.2.</span> <span class="nav-text">1.3.2  jvm指令层面看看x++</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-3-3-%E4%BB%8E%E6%9C%BA%E5%99%A8%E6%8C%87%E4%BB%A4%E7%9C%8Bx"><span class="nav-number">2.3.3.</span> <span class="nav-text">1.3.3 从机器指令看x++</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C-memory-barrier"><span class="nav-number">3.</span> <span class="nav-text">2.内存屏障 memory barrier</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1-%E6%A6%82%E5%BF%B5"><span class="nav-number">3.1.</span> <span class="nav-text">2.1 概念</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-2-Intel-64%E7%9A%84%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C%E6%8C%87%E4%BB%A4%E5%8F%8A%E5%86%85%E5%AD%98%E6%8E%92%E5%BA%8F%E9%99%90%E5%88%B6"><span class="nav-number">3.2.</span> <span class="nav-text">2.2 Intel 64的内存屏障指令及内存排序限制</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-1-%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C%E6%8C%87%E4%BB%A4"><span class="nav-number">3.2.1.</span> <span class="nav-text">2.2.1 内存屏障指令</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-2-%E5%86%85%E5%AD%98%E6%8E%92%E5%BA%8F%E9%99%90%E5%88%B6"><span class="nav-number">3.2.2.</span> <span class="nav-text">2.2.2 内存排序限制</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-3-Java%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B"><span class="nav-number">3.3.</span> <span class="nav-text">2.3 Java内存模型</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-%E6%80%BB%E7%BB%93"><span class="nav-number">4.</span> <span class="nav-text">3.总结</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-%E5%8F%82%E8%80%83"><span class="nav-number">5.</span> <span class="nav-text">4.参考</span></a></li></ol></div>
+        </section>
+        <!--/noindex-->
+
+        <section class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">YellowStar5</p>
+  <div class="site-description" itemprop="description">Java后端程序员，想做个手艺人。</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">14</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">34</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://www.douban.com/people/146579421/" title="豆瓣 → https:&#x2F;&#x2F;www.douban.com&#x2F;people&#x2F;146579421&#x2F;" rel="noopener" target="_blank"><i class="fas fa-book-reader fa-fw"></i>豆瓣</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/codercuixin" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;codercuixin" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/u/5509464340" title="微博 → https:&#x2F;&#x2F;weibo.com&#x2F;u&#x2F;5509464340" rel="noopener" target="_blank"><i class="fab fa-weibo fa-fw"></i>微博</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://yellowstar5.cn/atom.xml" title="RSS → https:&#x2F;&#x2F;yellowstar5.cn&#x2F;atom.xml"><i class="fa fa-rss-square fa-fw"></i>RSS</a>
+      </span>
+  </div>
+
+
+
+        </section>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="yellowstar5.cn/volatile%E5%9F%9F%E7%9A%84%E8%AF%AD%E4%B9%89%E5%8F%8A%E5%85%B6%E5%AE%9E%E7%8E%B0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="YellowStar5">
+      <meta itemprop="description" content="Java后端程序员，想做个手艺人。">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="YellowStar5">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          volatile域的语义及其实现
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2020-08-08 21:58:13" itemprop="dateCreated datePublished" datetime="2020-08-08T21:58:13+08:00">2020-08-08</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020-08-25 17:16:55" itemprop="dateModified" datetime="2020-08-25T17:16:55+08:00">2020-08-25</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/JUC/" itemprop="url" rel="index"><span itemprop="name">JUC</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="0-背景-缓存一致性"><a href="#0-背景-缓存一致性" class="headerlink" title="0.背景-缓存一致性"></a>0.背景-缓存一致性</h1><p>根据维基百科的定义：<br>在一个共享内存多处理器系统中，每个处理器都有一个单独的缓存，可以有很多共享数据副本：一个在主内存中，一个在每个请求它的处理器的本地缓存中。 当一个数据副本被更改时，其他副本必须反映该更改。 缓存一致性是确保共享操作数（数据）值的更改及时在整个系统中传播的学科。<br>下面图1是缓存不一致的示例图，图2是缓存一致的示例图</p>
+<a id="more"></a>
+<p><img src="https://img-blog.csdnimg.cn/20200808205610441.gif" alt="缓存不一致"><br><img src="https://img-blog.csdnimg.cn/20200808205717500.gif" alt="缓存一致"><br><strong>其实Java的volatile某种意义上也是来解决这种缓存不一致的情况。</strong></p>
+<p>更多缓存一致性的知识，可以参看<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Cache_coherence">维基百科的词条</a>，也可以看medium上的<a target="_blank" rel="noopener" href="https://medium.com/@TechExpertise/cache-coherence-problem-and-approaches-a18cdd48ee0e">这篇文章</a></p>
+<h1 id="1-JMM提供的volatile域的语义"><a href="#1-JMM提供的volatile域的语义" class="headerlink" title="1.JMM提供的volatile域的语义"></a>1.JMM提供的volatile域的语义</h1><h2 id="1-1-可见性"><a href="#1-1-可见性" class="headerlink" title="1.1 可见性"></a>1.1 可见性</h2><p>根据JSR-133 FAQ中的说明，volatile字段是用于在线程之间传递状态的特殊字段。 每次读取volatile时，都会看到任意一个线程对该volatile的最后一次写入。 实际上，程序员将volatile字段指定为不能接受由于缓存或重排序而导致的“过时”值的字段。 禁止编译器和运行时在寄存器中分配它们。 它们还必须确保在写入后将其从高速缓存（cache）中刷新到主存(memory)，以便它们可以立即对其他线程可见。 同样，在读取volatile字段之前，必须使高速缓存无效，以便可以看到主内存中的值而不是本地处理器高速缓存中的值。 </p>
+<p><strong>也就是说每次读取volatile都是从主存读取，写入也会刷新到主存，因而保证了不同线程拿到的都是最新值，即保证了共享资源对各个CPU上的线程的可见性，这其实就是保证了缓存一致性。</strong></p>
+<h2 id="1-2-重排序限制"><a href="#1-2-重排序限制" class="headerlink" title="1.2. 重排序限制"></a>1.2. 重排序限制</h2><p>在旧的内存模型下（Java1.5之前），对volatile变量的访问不能相互重排序，但可以与nonvolatile变量访问一起重排序。 这破坏了volatile字段作为从一个线程到另一线程发信号通知状态的一种手段。</p>
+<p>在新的内存模型下(Java1.5及之后），volatile变量不能相互重新排序仍然为true。区别在于，现在对它们周围的正常字段访问进行重排序不再那么容易了。</p>
+<p>写入一个volatile 字段具有与monitor释放相同的存储效果，而从一个volatile 字段中读取具有与monitor获取相同的存储效果。</p>
+<p>实际上，由于新的内存模型对volatile 字段访问与其他字段访问（无论是否为易失性）的重新排序施加了更严格的约束，因此当线程A写入volatile 字段f时，对线程A可见的任何内容，这些内容在线程B读取f时都可见。</p>
+<p>这是一个如何使用易失性字段的简单示例：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">class VolatileExample &#123;</span><br><span class="line">  int x &#x3D; 0;</span><br><span class="line">  volatile boolean v &#x3D; false;</span><br><span class="line">  public void writer() &#123;</span><br><span class="line">    x &#x3D; 42;</span><br><span class="line">    v &#x3D; true;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  public void reader() &#123;</span><br><span class="line">    if (v &#x3D;&#x3D; true) &#123;</span><br><span class="line">      &#x2F;&#x2F;uses x - guaranteed to see 42.</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>假定一个线程在调用writer方法，而另一个在调用reader方法。在writer方法中对v的写操作，会将对x的写操作也更新到主存中，而对v的读操作则从主存中获取该值。</p>
+<p>因此，如果reader方法看到v的值为true，那么也保证可以看到在它之前发生的对42的写入。</p>
+<p>在旧的内存模型下，情况并非如此。如果v不是volatile，则编译器可以对writer方法中的写入进行重排序，而reader方法对x的读取可能会看到0。关于重排序的示例，可以参见<a target="_blank" rel="noopener" href="https://jpbempel.github.io/2015/05/26/volatile-and-memory-barriers.html">这篇文章</a>。</p>
+<p>有效地，volatile的语义已得到实质性增强，几乎达到了同步(synchronization)的水平。出于可见性目的，对volatile 字段的每次读取或写入都像 “half” a synchronization (半同步)一样。</p>
+<p>重要说明：请注意，两个线程访问相同的volatile变量很重要，以便正确设置 happens-before 关系。在线程A写入volatile字段f时，对线程A的可见的一切，并不一定对读取volatile字段 g之后的线程B可见。</p>
+<p>释放和获取必须“匹配”（即在相同的volatile 字段上执行）以具有正确的语义。</p>
+<h2 id="1-3-如果x为volatile域，那么x-是原子操作吗？"><a href="#1-3-如果x为volatile域，那么x-是原子操作吗？" class="headerlink" title="1.3.如果x为volatile域，那么x++ 是原子操作吗？"></a>1.3.如果x为volatile域，那么x++ 是原子操作吗？</h2><p>首先先解释一下什么是原子操作：</p>
+<p>An atomic operation is an operation that will always be executed without any other process being able to read or change state that is read or changed during the operation</p>
+<p>原子操作是这样一个操作，该操作执行期间读取或改变的状态不会被任何其他进程读取或改变。</p>
+<h3 id="1-3-1-与预期不符"><a href="#1-3-1-与预期不符" class="headerlink" title="1.3.1 与预期不符"></a>1.3.1 与预期不符</h3><p>假如我们有下面的代码：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line">package volatileTest;</span><br><span class="line"></span><br><span class="line">import juc.CountDownLatch;</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * * @Author: cuixin</span><br><span class="line"> * * @Date: 2020&#x2F;8&#x2F;5 19:25</span><br><span class="line"> *&#x2F;</span><br><span class="line">public class VolatileAdder &#123;</span><br><span class="line">    private  volatile int x;</span><br><span class="line">    public  void add()&#123;</span><br><span class="line">        &#x2F;&#x2F;不是原子操作</span><br><span class="line">        x++;</span><br><span class="line">    &#125;</span><br><span class="line">    public  int get()&#123;</span><br><span class="line">        return x;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    public static void main(String[] args) throws Exception</span><br><span class="line">    &#123;</span><br><span class="line">        VolatileAdder instance &#x3D; new VolatileAdder();</span><br><span class="line">        int taskNum &#x3D; 2;</span><br><span class="line">        CountDownLatch countDownLatch &#x3D; new CountDownLatch(taskNum);</span><br><span class="line">        for(int i&#x3D;0; i&lt;taskNum; i++)&#123;</span><br><span class="line">            new Thread(new Task(instance, countDownLatch)).start();  </span><br><span class="line">        &#125;</span><br><span class="line">        countDownLatch.await();</span><br><span class="line">        System.out.println(instance.get());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    private static class Task implements Runnable&#123;</span><br><span class="line">        private VolatileAdder adder;</span><br><span class="line">        private CountDownLatch latch;</span><br><span class="line">        Task(VolatileAdder adder,  CountDownLatch latch)&#123;</span><br><span class="line">            this.adder &#x3D; adder;</span><br><span class="line">            this.latch &#x3D; latch;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        public void run() &#123;</span><br><span class="line">            for (int i &#x3D; 0; i &lt; 100000; i++)</span><br><span class="line">            &#123;</span><br><span class="line">                adder.add();</span><br><span class="line">            &#125;</span><br><span class="line">            latch.countDown();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>（注：这里的使用CountDownLatch只是为了确保，两个线程运行完任务后，主线程才会调用instance.get()，输出x的值。）<br>我们运行上面的程序，发现结果并不是预想的200000，要比这个值小一些（如果在你的机器上不是，你可以适当调大run方法中的循环次数）。</p>
+<h3 id="1-3-2-jvm指令层面看看x"><a href="#1-3-2-jvm指令层面看看x" class="headerlink" title="1.3.2  jvm指令层面看看x++"></a>1.3.2  jvm指令层面看看x++</h3><p> 下面我们先从jvm指令层面看看x++是不是原子的。</p>
+<p>执行</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">javac volatileTest&#x2F;VolatileAdder.java </span><br><span class="line"></span><br><span class="line">javap -v  volatileTest&#x2F;VolatileAdder &gt; volatileTest&#x2F;VolatileAdder.disasm</span><br></pre></td></tr></table></figure>
+
+<p>拿到jvm层面反汇编代码，查看<code>volatileTest/VolatileAdder.disasm</code> 文件，可以发现 add 方法里面的一行 x++，用的四行 jvm 指令实现的。如下图：<br><img src="https://img-blog.csdnimg.cn/20200807165754442.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70" alt="valatileAdder-add"></p>
+<p>对上面标红四条JVM指令说明一下：</p>
+<p><code>getfield</code> 获取字段x的值并放入操作数栈顶，</p>
+<p><code>iconst_1</code> 将1放入操作数栈栈顶；</p>
+<p><code>iadd</code> 从操作数栈顶取出两个元素相加并将结果放回到栈顶；</p>
+<p><code>putfield</code> 从操作数栈顶拿到上面的相加结果，并赋值给字段x。</p>
+<p><strong>由于一个 ++ 操作需要四条 JVM 指令，那么就可能存在下面这种执行序列，此时相当于少做了一次++操作。</strong></p>
+<table>
+<thead>
+<tr>
+<th>线程A</th>
+<th>线程B</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>getfield</td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>getfield</td>
+</tr>
+<tr>
+<td>iconst_1</td>
+<td></td>
+</tr>
+<tr>
+<td>iadd</td>
+<td></td>
+</tr>
+<tr>
+<td>putfield</td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>iconst_1</td>
+</tr>
+<tr>
+<td></td>
+<td>iadd</td>
+</tr>
+<tr>
+<td></td>
+<td>putfield</td>
+</tr>
+</tbody></table>
+<p><strong>由于线程A执行 ++x操作期间，混杂着线程B 执行++x操作，所以说这不是原子操作。</strong></p>
+<p>那么如何解决呢，如果多线程下需要++操作，不妨使用Atomic相关类替代（预告，后面文章会介绍使用及原理）。</p>
+<p>如果你还不放心，以为上面的jvm对应的机器指令不一定也有这么多。</p>
+<h3 id="1-3-3-从机器指令看x"><a href="#1-3-3-从机器指令看x" class="headerlink" title="1.3.3 从机器指令看x++"></a>1.3.3 从机器指令看x++</h3><p>首先尝试运行下面的命令，将字节码文件转换成本地机器指令文件。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">java -XX:+UnlockDiagnosticVMOptions -XX:+PrintAssembly volatileTest&#x2F;VolatileAdder&gt; volatileTest&#x2F;VolatileAdder.native</span><br></pre></td></tr></table></figure>
+
+<p>这时候在我的机器上报了一个<code>Could not load hsdis-amd64.dll; library not loadable; PrintAssembly is disabled</code>的错误。</p>
+<p>这个根据不同的操作系统和 cpu 上面的报错会有所不同，你可以按照<a target="_blank" rel="noopener" href="https://github.com/liuzhengyang/hsdis">这个地址</a>自己编译来解决上面的问题，也可以自己搜搜看有没有现成的（比如，我用的就是<a target="_blank" rel="noopener" href="https://github.com/LiuDui/JavaTools">别人弄好的文件</a>），然后放到了JAVA_HOME/bin路径下，再执行就不报错了。</p>
+<p>在 <code>VolatileAdder.native</code>中搜索 <code>&#39;add&#39;</code> ,可以看到 <code>x++</code>，也是由四条机器指令实现的，同样的道理再一次说明了x++不是原子操作。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200808223203146.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h1 id="2-内存屏障-memory-barrier"><a href="#2-内存屏障-memory-barrier" class="headerlink" title="2.内存屏障 memory barrier"></a>2.内存屏障 memory barrier</h1><h2 id="2-1-概念"><a href="#2-1-概念" class="headerlink" title="2.1 概念"></a>2.1 概念</h2><p>下面的这几段介绍来自<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Memory_barrier">维基百科</a>：</p>
+<blockquote>
+<p>A memory barrier, also known as a membar, memory fence or fence instruction, is a type of barrier instruction that causes a central processing unit (CPU) or compiler to enforce an ordering constraint on memory operations issued before and after the barrier instruction. This typically means that operations issued prior to the barrier are guaranteed to be performed before operations issued after the barrier.</p>
+</blockquote>
+<p>内存屏障，也称为 membar,，memory fence或 fence instruction，是一种屏障指令，它使中央处理单元（CPU）或编译器对于在屏障指令之前和之后发出的存储器操作执行一种排序约束。</p>
+<p>这通常意味着可以保证在屏障之前发布的操作可以在屏障之后发布的操作之前执行。</p>
+<blockquote>
+<p>Memory barriers are necessary because most modern CPUs employ performance optimizations that can result in out-of-order execution. This reordering of memory operations (loads and stores) normally goes unnoticed within a single thread of execution, but can cause unpredictable behaviour in concurrent programs and device drivers unless carefully controlled. The exact nature of an ordering constraint is hardware dependent and defined by the architecture’s memory ordering model. Some architectures provide multiple barriers for enforcing different ordering constraints.</p>
+</blockquote>
+<p>内存屏障是必需的，因为大多数现代CPU都采用了性能优化，这些性能优化可能会导致乱序执行。</p>
+<p>通常在单个执行线程中不会注意到这种内存操作（load和store）的重新排序，但是除非仔细控制，否则可能在并发程序和设备驱动程序中引起不可预测的行为。</p>
+<p>排序约束的确切性质取决于硬件，并由体系结构的内存排序模型定义。某些体系结构为执行不同的排序约束提供了多个内存屏障。</p>
+<blockquote>
+<p>Memory barriers are typically used when implementing low-level machine code that operates on memory shared by multiple devices. Such code includes synchronization primitives and lock-free data structures on multiprocessor systems, and device drivers that communicate with computer hardware.</p>
+</blockquote>
+<p>当实现在多个设备共享的内存上运行的低级机器代码时，通常使用内存屏障。此类代码包括多处理器系统上的同步原语和无锁数据结构，以及与计算机硬件进行通信的设备驱动程序。</p>
+<h2 id="2-2-Intel-64的内存屏障指令及内存排序限制"><a href="#2-2-Intel-64的内存屏障指令及内存排序限制" class="headerlink" title="2.2 Intel 64的内存屏障指令及内存排序限制"></a>2.2 Intel 64的内存屏障指令及内存排序限制</h2><h3 id="2-2-1-内存屏障指令"><a href="#2-2-1-内存屏障指令" class="headerlink" title="2.2.1 内存屏障指令"></a>2.2.1 内存屏障指令</h3><p>上面主要是说了Java 内存模型提供的 volatile 语义，那么这些语义是如何实现的呢？</p>
+<p>其实上面 <code>VolatileAdder.native</code>文件已经给出了答案，关键就在<code>lock add</code>l前面的<code>lock</code>前缀</p>
+<p><img src="https://img-blog.csdnimg.cn/2020080717165986.png" alt="image2020-8-7_14-28-45.png"><br>通过查看<a target="_blank" rel="noopener" href="https://www.intel.com/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-software-developer-vol-2a-manual.pdf">英特尔®64和IA-32架构软件开发人员手册卷2A</a>, 可以找到 <code>lock</code> 的说明，下面是节选：</p>
+<p><img src="https://img-blog.csdnimg.cn/20200807171750857.png" alt="image2020-8-6_20-41-13.png"><br>使处理器的LOCK＃信号在执行伴随的指令的过程中被声明（将指令转换为原子指令）。在多处理器环境中，LOCK＃信号可确保在断言该信号时，该处理器拥有对任何共享内存的独占使用。</p>
+<p>也就是上面在 <code>addl</code> 添加前缀 <code>lock</code> ，这会导致该处理器执行addl时拥有对任何共享内存的独占使用。</p>
+<p>其实x86-64中类似的内存屏障还有很多，比如<code>mfence</code>，<code>lfence</code>, <code>cpuid</code> 等。</p>
+<p>比如下面是Intel 64中<a target="_blank" rel="noopener" href="https://www.intel.com/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-software-developer-vol-2a-manual.pdf">mfence</a>的节选说明：</p>
+<blockquote>
+<p>Performs a serializing operation on all load-from-memory and store-to-memory instructions that were issued prior the MFENCE instrunction.<br>This serializing operation guarantees that every load and store instruction that preceds the MFENCE instruction in program order becomes globally visible before any load or store instruction that follows the MFENCE instruction.</p>
+</blockquote>
+<p>对在MFENCE指令之前发出的所有 load-from-memory  和 store-to-memory 执行序列化操作。此序列化操作可确保，按照程序顺序在 MFENCE 指令之前的每个 load 和 store 指令，对于 MFENCE 指令之后的任何 load 或store指令都是全局可见的。</p>
+<h3 id="2-2-2-内存排序限制"><a href="#2-2-2-内存排序限制" class="headerlink" title="2.2.2 内存排序限制"></a>2.2.2 内存排序限制</h3><p>这里有个文件是<a target="_blank" rel="noopener" href="http://www.cs.cmu.edu/~410-f10/doc/Intel_Reordering_318147.pdf">关于Intel® 64内存排序</a>的说明，大家也可以看下。</p>
+<h2 id="2-3-Java内存模型"><a href="#2-3-Java内存模型" class="headerlink" title="2.3 Java内存模型"></a>2.3 Java内存模型</h2><p>上面这只是关于Intel® 64相关的内存屏障指令和内存排序的说明，每个CPU架构都不同呢？是不是有点绝望。。。嗯，还好有大神 </p>
+<p>下面是<a target="_blank" rel="noopener" href="http://gee.cs.oswego.edu/dl/jmm/cookbook.html">Doug Lea</a>整理的关于不同处理器相关的内存屏障指令和原子指令。<br><img src="https://img-blog.csdnimg.cn/2020080717214781.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<p>大家一定要去看看Doug Lea写的<a target="_blank" rel="noopener" href="http://gee.cs.oswego.edu/dl/jmm/cookbook.html">这篇“The JSR-133 Cookbook for Compiler Writers</a>”。<br><strong>看了之后JVM会确保生成的机器指令会在volatile字段周围插入合适的内存屏障指令，从而实现JSR-133定义的volatile语义。</strong> 上面给出的示例VolatileExample就会在如下位置插入内存屏障指令StoreStore和LoadLoad。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">class VolatileExample &#123;</span><br><span class="line">  int x &#x3D; 0;</span><br><span class="line">  volatile boolean v &#x3D; false;</span><br><span class="line">  public void writer() &#123;</span><br><span class="line">    x &#x3D; 42;   </span><br><span class="line">    &#x2F;&#x2F;在这之间插入StoreStore屏障, 等价于在v的值true刷到主存之前，先将x的值42刷到主存。</span><br><span class="line">    v &#x3D; true;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  public void reader() &#123;</span><br><span class="line">   &#x2F;&#x2F;在获取v的值之后插入LoadLoad屏障，等价于先从主存加载v的值，如果v的值为true，再从主存加载x的值。</span><br><span class="line">   if (v &#x3D;&#x3D; true) &#123;</span><br><span class="line">      &#x2F;&#x2F;uses x - guaranteed to see 42.</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>读完这篇文章可以发现，可以看到不同CPU架构提供不同的内存屏障指令（主要由硬件工程师实现）和内存排序限制；为了对上层隐藏各种CPU架构的不同，Doug Lea基于此又提出了JVM层面的LoadLoad，StoreStore等内存屏障（由JVM实现者实现）；然后JVM实现者则提供统一的Java内存模型（<a target="_blank" rel="noopener" href="https://docs.oracle.com/javase/specs/jls/se8/html/index.html">Java语言规范 第八版 17章</a>）；然后我们这些普通的Java开发者就在这统一的Java内存模型上写跨平台的应用</strong>。</p>
+<p>这里是不是有点像搭积木一样，一层层落上去，一层层地抽象上去。虽然按理说普通的Java开发者只需要熟悉Java内存模型即可编写并发程序，但是为了更好地理解如何使用Java内存模型提供的语义，为了更好地将自己的理解迁移到其他编程语言，理解这些底层的机制十分有必要。</p>
+<h1 id="3-总结"><a href="#3-总结" class="headerlink" title="3.总结"></a>3.总结</h1><p>这篇文章首先是推荐的缓存一致性的文章，给大家一个背景。然后主要是对volatile的语义进行了介绍，并设计示例VolatileAdder从JVM指令和机器指令两个层面来说明volatile域++操作不是原子操作。</p>
+<p>下面有针对示例VolatileAdder的机器代码中的lock addl指令进行了说明，进而引出Intel64内存屏障指令和内存排序限制，然后JVM对不同CPU架构进行封装抽象提供了统一的Java内存模型给普通开发者。</p>
+<p>是不是没有想到，一个看起来简简单单的volatile，后面竟然隐藏了那么多秘密。</p>
+<h1 id="4-参考"><a href="#4-参考" class="headerlink" title="4.参考"></a>4.参考</h1><p><a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Cache_coherence">https://en.wikipedia.org/wiki/Cache_coherence</a><br><a target="_blank" rel="noopener" href="https://docs.oracle.com/javase/specs/jls/se8/html/index.html">https://docs.oracle.com/javase/specs/jls/se8/html/index.html</a><br><a target="_blank" rel="noopener" href="http://gee.cs.oswego.edu/dl/jmm/cookbook.html">http://gee.cs.oswego.edu/dl/jmm/cookbook.html</a><br><a target="_blank" rel="noopener" href="https://www.cs.umd.edu/~pugh/java/memoryModel/jsr-133-faq.html#volatile">https://www.cs.umd.edu/~pugh/java/memoryModel/jsr-133-faq.html#volatile</a><br><a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Volatile_(computer_programming)#cite_note-9">https://en.wikipedia.org/wiki/Volatile_(computer_programming)#cite_note-9</a><br><a target="_blank" rel="noopener" href="https://docs.oracle.com/javase/8/docs/technotes/tools/windows/javap.html">https://docs.oracle.com/javase/8/docs/technotes/tools/windows/javap.html</a><br><a target="_blank" rel="noopener" href="https://wiki.openjdk.java.net/display/HotSpot/PrintAssembly">https://wiki.openjdk.java.net/display/HotSpot/PrintAssembly</a><br><a target="_blank" rel="noopener" href="https://jpbempel.github.io/2015/12/30/printassembly-output-explained.html">https://jpbempel.github.io/2015/12/30/printassembly-output-explained.html</a><br><a target="_blank" rel="noopener" href="https://www.infoq.com/articles/memory_barriers_jvm_concurrency/">https://www.infoq.com/articles/memory_barriers_jvm_concurrency/</a><br><a target="_blank" rel="noopener" href="https://jpbempel.github.io/2015/05/26/volatile-and-memory-barriers.html">https://jpbempel.github.io/2015/05/26/volatile-and-memory-barriers.html</a></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Java/" rel="tag"># Java</a>
+              <a href="/tags/Java%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/" rel="tag"># Java内存模型</a>
+              <a href="/tags/JMM/" rel="tag"># JMM</a>
+              <a href="/tags/memory-barrier/" rel="tag"># memory barrier</a>
+              <a href="/tags/volatile/" rel="tag"># volatile</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/Unsafe%E4%BB%8B%E7%BB%8D%E5%8F%8ACAS%E5%8E%9F%E7%90%86%E8%A7%A3%E6%9E%90/" rel="prev" title="Unsafe介绍及CAS原理解析">
+                  <i class="fa fa-chevron-left"></i> Unsafe介绍及CAS原理解析
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/Java%20%E5%8E%9F%E5%AD%90%E7%B1%BB%E7%9A%84%E4%BD%BF%E7%94%A8%E5%8F%8A%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/" rel="next" title="Java原子类的使用及原理分析">
+                  Java原子类的使用及原理分析 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">YellowStar5</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : 'c7399bb9f366b510f657',
+      clientSecret: '952cfd3a5207d8ddfc497983491a1089cf2985c4',
+      repo        : 'gitalk',
+      owner       : 'codercuixin',
+      admin       : ['codercuixin'],
+      id          : 'bf665a34e0305bda84f3e571d504dca1',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

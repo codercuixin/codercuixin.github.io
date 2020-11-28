@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.1/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yellowstar5.cn","root":"/","scheme":"Muse","version":"8.0.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
+  </script>
+
+  <meta name="description" content="1.启动一个带ACL 控制的Agent首先，从这个网址下载consul，解压后发现就是个可执行文件，如果不可以执行，chmod +x consul 一下。 为了试验Consul较多的功能，这里我们打算启用一个dev模式，带ACL控制的Consul代理。配置文件config.json如下">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Consul 命令行最全文档">
+<meta property="og:url" content="yellowstar5.cn/Consul%20%E5%91%BD%E4%BB%A4%E8%A1%8C%E6%9C%80%E5%85%A8%E6%96%87%E6%A1%A3/index.html">
+<meta property="og:site_name" content="YellowStar5">
+<meta property="og:description" content="1.启动一个带ACL 控制的Agent首先，从这个网址下载consul，解压后发现就是个可执行文件，如果不可以执行，chmod +x consul 一下。 为了试验Consul较多的功能，这里我们打算启用一个dev模式，带ACL控制的Consul代理。配置文件config.json如下">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190608093247340.png">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190608093748676.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190608094148718.png">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190608095258185.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190608172749686.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190608183306574.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190608193356233.png">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190608201036227.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190609161751587.png">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190609161805243.png">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190609164128986.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/2019060916444157.png">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190609164626550.png">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190609165401468.png">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190609165743690.png">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190609170938133.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190608210239759.png">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190608204914304.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/2019060820302690.png">
+<meta property="article:published_time" content="2019-06-09T10:37:03.000Z">
+<meta property="article:modified_time" content="2020-08-25T09:15:27.581Z">
+<meta property="article:author" content="YellowStar5">
+<meta property="article:tag" content="Consul">
+<meta property="article:tag" content="服务发现与注册">
+<meta property="article:tag" content="Consul命令行">
+<meta property="article:tag" content="Consul Cli">
+<meta property="article:tag" content="Consul ACL">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://img-blog.csdnimg.cn/20190608093247340.png">
+
+
+<link rel="canonical" href="yellowstar5.cn/Consul%20%E5%91%BD%E4%BB%A4%E8%A1%8C%E6%9C%80%E5%85%A8%E6%96%87%E6%A1%A3/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Consul 命令行最全文档 | YellowStar5</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">YellowStar5</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">风物长宜放眼量</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <section class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-%E5%90%AF%E5%8A%A8%E4%B8%80%E4%B8%AA%E5%B8%A6ACL-%E6%8E%A7%E5%88%B6%E7%9A%84Agent"><span class="nav-number">1.</span> <span class="nav-text">1.启动一个带ACL 控制的Agent</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-%E5%91%BD%E4%BB%A4%E8%A1%8C"><span class="nav-number">2.</span> <span class="nav-text">2.命令行</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#acl"><span class="nav-number">2.1.</span> <span class="nav-text">acl</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#agent"><span class="nav-number">2.2.</span> <span class="nav-text">agent</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#catalog"><span class="nav-number">2.3.</span> <span class="nav-text">catalog</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#config"><span class="nav-number">2.4.</span> <span class="nav-text">config</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#connect"><span class="nav-number">2.5.</span> <span class="nav-text">connect</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#debug"><span class="nav-number">2.6.</span> <span class="nav-text">debug</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#watch"><span class="nav-number">2.7.</span> <span class="nav-text">watch</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#event"><span class="nav-number">2.8.</span> <span class="nav-text">event</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#exec"><span class="nav-number">2.9.</span> <span class="nav-text">exec</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#force-leave"><span class="nav-number">2.10.</span> <span class="nav-text">force-leave</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#info"><span class="nav-number">2.11.</span> <span class="nav-text">info</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#intention"><span class="nav-number">2.12.</span> <span class="nav-text">intention</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#join"><span class="nav-number">2.13.</span> <span class="nav-text">join</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#keygen"><span class="nav-number">2.14.</span> <span class="nav-text">keygen</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#keyring"><span class="nav-number">2.15.</span> <span class="nav-text">keyring</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#kv"><span class="nav-number">2.16.</span> <span class="nav-text">kv</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#leave"><span class="nav-number">2.17.</span> <span class="nav-text">leave</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#license"><span class="nav-number">2.18.</span> <span class="nav-text">license</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#lock"><span class="nav-number">2.19.</span> <span class="nav-text">lock</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#login"><span class="nav-number">2.20.</span> <span class="nav-text">login</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#logout"><span class="nav-number">2.21.</span> <span class="nav-text">logout</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#maint"><span class="nav-number">2.22.</span> <span class="nav-text">maint</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#members"><span class="nav-number">2.23.</span> <span class="nav-text">members</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#monitor"><span class="nav-number">2.24.</span> <span class="nav-text">monitor</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#operator"><span class="nav-number">2.25.</span> <span class="nav-text">operator</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#reload"><span class="nav-number">2.26.</span> <span class="nav-text">reload</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#rtt%EF%BC%88round-trip-time"><span class="nav-number">2.27.</span> <span class="nav-text">rtt（round trip time)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#services"><span class="nav-number">2.28.</span> <span class="nav-text">services</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#snapshot"><span class="nav-number">2.29.</span> <span class="nav-text">snapshot</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#tls"><span class="nav-number">2.30.</span> <span class="nav-text">tls</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#validate"><span class="nav-number">2.31.</span> <span class="nav-text">validate</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#version"><span class="nav-number">2.32.</span> <span class="nav-text">version</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%9C%80%E5%90%8E%E7%9A%84%E8%AF%B4%E6%98%8E"><span class="nav-number">3.</span> <span class="nav-text">最后的说明</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%82%E8%80%83%EF%BC%9A"><span class="nav-number">4.</span> <span class="nav-text">参考：</span></a></li></ol></div>
+        </section>
+        <!--/noindex-->
+
+        <section class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">YellowStar5</p>
+  <div class="site-description" itemprop="description">Java后端程序员，想做个手艺人。</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">14</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">34</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://www.douban.com/people/146579421/" title="豆瓣 → https:&#x2F;&#x2F;www.douban.com&#x2F;people&#x2F;146579421&#x2F;" rel="noopener" target="_blank"><i class="fas fa-book-reader fa-fw"></i>豆瓣</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/codercuixin" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;codercuixin" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/u/5509464340" title="微博 → https:&#x2F;&#x2F;weibo.com&#x2F;u&#x2F;5509464340" rel="noopener" target="_blank"><i class="fab fa-weibo fa-fw"></i>微博</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://yellowstar5.cn/atom.xml" title="RSS → https:&#x2F;&#x2F;yellowstar5.cn&#x2F;atom.xml"><i class="fa fa-rss-square fa-fw"></i>RSS</a>
+      </span>
+  </div>
+
+
+
+        </section>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="yellowstar5.cn/Consul%20%E5%91%BD%E4%BB%A4%E8%A1%8C%E6%9C%80%E5%85%A8%E6%96%87%E6%A1%A3/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="YellowStar5">
+      <meta itemprop="description" content="Java后端程序员，想做个手艺人。">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="YellowStar5">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Consul 命令行最全文档
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-06-09 18:37:03" itemprop="dateCreated datePublished" datetime="2019-06-09T18:37:03+08:00">2019-06-09</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020-08-25 17:15:27" itemprop="dateModified" datetime="2020-08-25T17:15:27+08:00">2020-08-25</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Consul/" itemprop="url" rel="index"><span itemprop="name">Consul</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="1-启动一个带ACL-控制的Agent"><a href="#1-启动一个带ACL-控制的Agent" class="headerlink" title="1.启动一个带ACL 控制的Agent"></a>1.启动一个带ACL 控制的Agent</h1><p>首先，从这个网址<a target="_blank" rel="noopener" href="https://www.consul.io/downloads.html">下载consul</a>，解压后发现就是个可执行文件，如果不可以执行，chmod +x consul 一下。</p>
+<p>为了试验Consul较多的功能，这里我们打算启用一个dev模式，带ACL控制的Consul代理。<br>配置文件config.json如下</p>
+<a id="more"></a>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    &quot;datacenter&quot;:&quot;dc1&quot;,</span><br><span class="line">    &quot;primary_datacenter&quot;:&quot;dc1&quot;,</span><br><span class="line">    &quot;data_dir&quot;:&quot;&#x2F;opt&#x2F;consul&#x2F;data&#x2F;&quot;,</span><br><span class="line">    &quot;enable_script_checks&quot;:false,</span><br><span class="line">    &quot;bind_addr&quot;:&quot;127.0.0.1&quot;,</span><br><span class="line">    &quot;node_name&quot;:&quot;consul-dev&quot;,</span><br><span class="line">    &quot;enable_local_script_checks&quot;:true,</span><br><span class="line">    &quot;log_file&quot;:&quot;&#x2F;opt&#x2F;consul&#x2F;log&#x2F;&quot;,</span><br><span class="line">    &quot;log_level&quot;:&quot;info&quot;,</span><br><span class="line">    &quot;log_rotate_bytes&quot;:100000000,</span><br><span class="line">    &quot;log_rotate_duration&quot;:&quot;24h&quot;,</span><br><span class="line">    &quot;encrypt&quot;:&quot;krCysDJnrQ8dtA7AbJav8g&#x3D;&#x3D;&quot;,</span><br><span class="line">    &quot;acl&quot;:&#123;</span><br><span class="line">        &quot;enabled&quot;:true,</span><br><span class="line">        &quot;default_policy&quot;:&quot;deny&quot;,</span><br><span class="line">        &quot;enable_token_persistence&quot;:true,</span><br><span class="line">        &quot;tokens&quot;:&#123;</span><br><span class="line">            &quot;master&quot;:&quot;cd76a0f7-5535-40cc-8696-073462acc6c7&quot;      </span><br><span class="line">            &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>下面是参数说明：</p>
+<ul>
+<li>datacenter  此标志表示代理运行的数据中心。如果未提供，则默认为“dc1”。 Consul拥有对多个数据中心的一流支持，但它依赖于正确的配置。同一数据中心中的节点应在同一个局域网内。</li>
+<li>primary_datacenter: 这指定了对ACL信息具有权威性的数据中心。必须提供它才能启用ACL。</li>
+<li>bind_addr:  内部群集通信绑定的地址。这是群集中所有其他节点都应该可以访问的IP地址。默认情况下，这是“0.0.0.0”，这意味着Consul将绑定到本地计算机上的所有地址，并将第一个可用的私有IPv4地址通告给群集的其余部分。如果有多个私有IPv4地址可用，Consul将在启动时退出并显示错误。如果指定“[::]”，Consul将通告第一个可用的公共IPv6地址。如果有多个可用的公共IPv6地址，Consul将在启动时退出并显示错误。 Consul同时使用TCP和UDP，并且两者使用相同的端口。如果您有防火墙，请务必同时允许这两种协议。</li>
+<li>advertise_addr: 更改我们向群集中其他节点通告的地址。默认情况下，会使用-bind参数指定的地址.</li>
+<li>server: 是否是server agent节点。</li>
+<li>connect.enabled: 是否启动<a target="_blank" rel="noopener" href="https://www.consul.io/docs/connect/index.html">Consul Connect</a>，这里是启用的。</li>
+<li>node_name：节点名称。</li>
+<li>data_dir: agent存储状态的目录。</li>
+<li>enable_script_checks： 是否在此代理上启用执行脚本的健康检查。有安全漏洞，默认值就是false，这里单独提示下。</li>
+<li>enable_local_script_checks: 与enable_script_checks类似，但只有在本地配置文件中定义它们时才启用它们。仍然不允许在HTTP API注册中定义的脚本检查。</li>
+<li>log-file: 将所有Consul Agent日志消息重定向到文件。这里指定的是/opt/consul/log/目录。</li>
+<li>log_rotate_bytes：指定在需要轮换之前应写入日志的字节数。除非指定，否则可以写入日志文件的字节数没有限制</li>
+<li>log_rotate_duration：指定在需要旋转日志之前应写入日志的最长持续时间。除非另有说明，否则日志会每天轮换（24小时。单位可以是”ns”, “us” (or “µs”), “ms”, “s”, “m”, “h”， 比如设置值为24h</li>
+<li>encrypt：用于加密Consul Gossip 协议交换的数据。在启动各个server之前，配置成同一个UUID值就行，或者你用命令行consul keygen 命令来生成也可以。</li>
+<li>acl.enabled: 是否启用acl.</li>
+<li>acl.default_policy: “allow”或“deny”; 默认为“allow”，但这将在未来的主要版本中更改。当没有匹配规则时，默认策略控制令牌的行为。在“allow”模式下，ACL是黑名单：允许任何未明确禁止的操作。在“deny”模式下，ACL是白名单：阻止任何未明确允许的操作.</li>
+<li>acl.enable_token_persistence:  可能值为true或者false。值为true时，API使用的令牌集合将被保存到磁盘，并且当代理重新启动时会重新加载。</li>
+<li>acl.tokens.master:   具有全局管理的权限，也就是最大的权限。它允许操作员使用众所周知的令牌密钥ID来引导ACL系统。需要在所有的server agent上设置同一个值，可以设置为一个随机的UUID。这个值权限最大，注意保管好。</li>
+</ul>
+<p>接着我们以dev模式启动agent。</p>
+<pre><code>./consul agent -dev -config-file ./config.json </code></pre>
+<p>启动完之后，你会发现出现下面的错误<br><img src="https://img-blog.csdnimg.cn/20190608093247340.png" alt="acl-block"><br>这个错误是没有设置agent-token造成的，agent-token主要用于客户端和服务器执行内部操作.比如catalog api的更新，反熵同步等。</p>
+<p>1.先创建agent-token</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">curl \</span><br><span class="line">    --request PUT \</span><br><span class="line">    --header &quot;X-Consul-Token: cd76a0f7-5535-40cc-8696-073462acc6c7&quot; \</span><br><span class="line">    --data \</span><br><span class="line">&#39;&#123;</span><br><span class="line">  &quot;Name&quot;: &quot;Agent Token&quot;,</span><br><span class="line">  &quot;Type&quot;: &quot;client&quot;,</span><br><span class="line">  &quot;Rules&quot;: &quot;node \&quot;\&quot; &#123; policy &#x3D; \&quot;write\&quot; &#125; service \&quot;\&quot; &#123; policy &#x3D; \&quot;read\&quot; &#125;&quot;</span><br><span class="line">&#125;&#39; http:&#x2F;&#x2F;127.0.0.1:8500&#x2F;v1&#x2F;acl&#x2F;create</span><br></pre></td></tr></table></figure>
+<p>注意这里面的X-Consul-Token与上面config.json 里面的acl.tokens.master要是同一个值，此时你会看到生成成功，d118b1fc-77af-d870-8417-667c04b29cdf这一串就是agent-token了。<br><img src="https://img-blog.csdnimg.cn/20190608093748676.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>2.设置agent-token<br>由于这里只有一个agent，需要调用接口来设置agent-token。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">curl \</span><br><span class="line">    --request PUT \</span><br><span class="line">    --header &quot;X-Consul-Token: cd76a0f7-5535-40cc-8696-073462acc6c7&quot; \</span><br><span class="line">    --data \</span><br><span class="line">&#39;&#123;</span><br><span class="line">  &quot;Token&quot;: &quot;d118b1fc-77af-d870-8417-667c04b29cdf&quot;</span><br><span class="line">&#125;&#39; http:&#x2F;&#x2F;127.0.0.1:8500&#x2F;v1&#x2F;agent&#x2F;token&#x2F;acl_agent_token</span><br></pre></td></tr></table></figure>
+<p>然后你会发现之前的错误就消失了。<br><img src="https://img-blog.csdnimg.cn/20190608094148718.png" alt="在这里插入图片描述"><br>如此，一个带有ACL控制的agent就启动好了。如果你想搭建一个带ACL控制的集群，<a target="_blank" rel="noopener" href="https://blog.csdn.net/YellowStar5/article/details/90728468">请参见我的另一篇文章</a>。</p>
+<h1 id="2-命令行"><a href="#2-命令行" class="headerlink" title="2.命令行"></a>2.命令行</h1><p>consul 子命令挺多的，如下图，但不要慌，一个个来。<br><img src="https://img-blog.csdnimg.cn/20190608095258185.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70" alt="consul-subcommand"><br>最后设置一下环境变量，增加CONSUL_HTTP_TOKEN。<br>我这里是Mac，改的是~/.bash_profile；其他系统的，请自行搜索。</p>
+<pre><code> sudo vim ~/.bash_profile</code></pre>
+<p>在末尾添加</p>
+<pre><code>export CONSUL_HTTP_TOKEN=cd76a0f7-5535-40cc-8696-073462acc6c7</code></pre>
+<p>然后让新的环境变量生效：</p>
+<pre><code>source ~/.bash_profile</code></pre>
+<h2 id="acl"><a href="#acl" class="headerlink" title="acl"></a>acl</h2><p>关于acl部分，后面我们会在web-ui里面进行控制，我会单独写一篇文章系统介绍Consul ACL如何设置。不过，你可以先看我之前的文章，<a target="_blank" rel="noopener" href="https://blog.csdn.net/YellowStar5/article/details/90966308">Consul ACL集群配置说明以及ACL Token的用法</a>， 但这篇文章只告诉了怎么用，并没有讲清楚为什么这么用。</p>
+<h2 id="agent"><a href="#agent" class="headerlink" title="agent"></a>agent</h2><p>agent就是启动consul代理部分。这里面主要是一些配置信息，如何启动。后面会把完整版的配置翻译出来，供大家参考，不过还是强烈建议大家读读命令行的帮助说明, 即   ./consul agent –help</p>
+<h2 id="catalog"><a href="#catalog" class="headerlink" title="catalog"></a>catalog</h2><p> 与consul的catalog打交道。<br> 列出所有的数据中心： ./consul catalog datacenters<br> 列出所有的节点：./consul catalog nodes<br> 列出所有的服务：./consul catalog services</p>
+<h2 id="config"><a href="#config" class="headerlink" title="config"></a>config</h2><p>config命令用于与Consul的中央配置系统进行交互。<br>装备一个配置文件servie-defaults.hcl</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Kind &#x3D; &quot;service-defaults&quot;</span><br><span class="line">Name &#x3D; &quot;web&quot;</span><br><span class="line">Protocol &#x3D; &quot;http&quot;</span><br></pre></td></tr></table></figure>
+
+
+<p>写入一个配置：</p>
+<pre><code>./consul config write service-defaults.hcl </code></pre>
+<p>读取刚写入的配置：</p>
+<pre><code>./consul config  read -kind service-defaults -name web</code></pre>
+<p>列出特定类型的配置：</p>
+<pre><code>./consul config list -kind service-defaults</code></pre>
+<p>删除一个配置：</p>
+<pre><code>./consul config delete -kind service-defaults -name web</code></pre>
+<h2 id="connect"><a href="#connect" class="headerlink" title="connect"></a>connect</h2><p> 和Consul Connect的进行交互。Consul Connect使用相互TLS提供服务到服务连接授权和加密。应用程序可以使用sidecar代理自动为入站和出站连接建立TLS连接，而根本不知道Connect。应用程序还可以与Connect本机集成，以实现最佳性能和安全性。</p>
+<h2 id="debug"><a href="#debug" class="headerlink" title="debug"></a>debug</h2><p>consul debug命令在指定时间内监视Consul代理，将有关代理，集群和环境的信息记录到写入当前目录的归档中。<br>下面是执行./consul debug的结果，更多使用说明请执行./consul debug –help<br><img src="https://img-blog.csdnimg.cn/20190608172749686.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>可以看到输出文件被保存到命令行所在路径/consul-debug-1559985864.tar.gz中。你可以解压该文件，进行debug.</p>
+<h2 id="watch"><a href="#watch" class="headerlink" title="watch"></a>watch</h2><p>  监视（watch)可以监视数据视图（例如，节点列表，KV对，健康检查）的更新。检测到更新时，将调用外部处理程序。处理程序可以是任何可执行文件或HTTP端点。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;consul watch -type&#x3D;event -name&#x3D;helloserviceevent &#x2F;Use&#x2F;cuixin&#x2F;ConsulStudy&#x2F;mac-dev&#x2F;echo_handler.sh -helloservice</span><br></pre></td></tr></table></figure>
+<p>上面我们指定监视的类型是event， 名称是helloserviceevent的事件， 当收到该事件时，将触发执行echo_handler.sh这个脚本，并且参数为helloservice。<br>下面是echo_handler.sh这个脚本的内容:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">#!&#x2F;bin&#x2F;bash</span><br><span class="line"> echo “hello  $1” &gt;&gt; test.txt</span><br></pre></td></tr></table></figure>
+<p>很简单，会将内容追加到test.txt中。<br>注意这里需要给echo_handler.sh加下执行权限</p>
+<pre><code>chmod +x echo_handler.sh</code></pre>
+<h2 id="event"><a href="#event" class="headerlink" title="event"></a>event</h2><p>event命令提供了一种将自定义用户事件触发到整个数据中心的机制。这些事件对Consul不透明，但它们可用于构建脚本基础结构，以执行自动部署，重新启动服务或执行任何其他编排操作。可以使用watch（监视）处理事件。使用<strong>八卦协议</strong>传播事件。<br>虽然细节对于使用事件并不重要，但理解语义很有用。八卦层将尽最大努力发放活动，但没有保证发放成功。与大多数使用共识复制的Consul数据不同，事件数据纯粹是点对点的八卦。这意味着它没有持久化，也没有总排序。实际上，这意味着您不能依赖消息邮件传递的顺序。然而，优点是即使在没有服务器节点或停机期间仍可以使用事件。<br>基础八卦也设置了用户事件消息大小的限制。很难给出一个确切的数字，因为它取决于事件的各种参数，但有效载荷应保持非常小（&lt;100字节）。指定太大的事件将返回错误。</p>
+<p>有了上面watch部分提供的监视，下面我们就产生对应的事件就行。<br><code>./consul event -name=helloserviceevent</code><br>这个触发事件的命令可以执行多次，每次触发事件之后，你都会看到test.txt多了一行“hello -helloservice”<br><img src="https://img-blog.csdnimg.cn/20190608183306574.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"> </p>
+<h2 id="exec"><a href="#exec" class="headerlink" title="exec"></a>exec</h2><p> exec命令提供了一种远程执行机制。 例如，这可用于在提供Web服务的所有计算机上运行uptime命令。这里由于安全性问题，我们在配置里面禁用了远程执行（  “enable_script_checks”:false）。<br> 否则你可以执行./consul exec uptime 来查看各个节点已经启动多长时间了。<br> <img src="https://img-blog.csdnimg.cn/20190608193356233.png" alt="在这里插入图片描述"></p>
+<h2 id="force-leave"><a href="#force-leave" class="headerlink" title="force-leave"></a>force-leave</h2><p>force-leave命令强制Consul集群的成员进入“left”状态。 如果该成员仍然存活，它最终将重新加入群集。 此方法的真正目的是强制删除“failed”状态的节点。</p>
+<pre><code>./consul force-leave node-name</code></pre>
+<h2 id="info"><a href="#info" class="headerlink" title="info"></a>info</h2><p>info命令提供对操作员有用的各种调试信息。 根据代理是客户端还是服务器，将返回有关不同子系统的信息。<br>目前有顶级键：<br>agent：提供有关代理的信息<br>consul：有关Consul（客户或服务器）的信息<br>raft：提供有关Raft共识库的信息<br>serf_lan：提供有关LAN八卦池的信息<br>serf_wan：提供有关WAN八卦池的信息<br>    ./consul info</p>
+<h2 id="intention"><a href="#intention" class="headerlink" title="intention"></a>intention</h2><p>意图通过Connect定义服务的访问控制，用于控制哪些服务可以建立连接。可以通过API，CLI或UI管理意图。 （这部分和Consul Connect联系较为紧密，后面我研究透了，会单独写篇文章）。<br>创建一个允许“web”与“db”对话的意图：</p>
+<p>  $ consul intention create web db</p>
+<p>   测试是否允许“web”连接到“db”：</p>
+<p>  $ consul intention check web db</p>
+<p>   找到与“db”服务进行通信的所有意图：</p>
+<p>  $ consul intention match db</p>
+<h2 id="join"><a href="#join" class="headerlink" title="join"></a>join</h2><p>   通过指定至少一个现有成员,告知正在运行的Consul代理（使用“consul agent”）加入群集 </p>
+<pre><code>   ./consul join cluster_member1_address</code></pre>
+<p>  其中 cluster_member1_address 是ip:port的格式，可以通过运行./consul members 发现现有集群的地址。</p>
+<h2 id="keygen"><a href="#keygen" class="headerlink" title="keygen"></a>keygen</h2><p>keygen命令生成可用于Consul代理流量加密的加密密钥。 keygen命令使用加密强伪随机数生成器来生成密钥。你也可以选择自己生成一个UUID。</p>
+<pre><code>./consul keygen</code></pre>
+<h2 id="keyring"><a href="#keyring" class="headerlink" title="keyring"></a>keyring</h2><p>keyring命令用于检查和修改Consul的Gossip Pools中使用的加密密钥。 它能够向集群分发新的加密密钥，淘汰旧的加密密钥，以及更改集群用来加密消息的密钥。<br>查看集群目前使用的所有秘钥</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;consul keyring -list</span><br></pre></td></tr></table></figure>
+<p><img src="https://img-blog.csdnimg.cn/20190608201036227.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>这个值，与我们配置文件中指定的    “encrypt”:”krCysDJnrQ8dtA7AbJav8g==”是一致的。</p>
+<h2 id="kv"><a href="#kv" class="headerlink" title="kv"></a>kv</h2><p>kv命令用于通过命令行与Consul的KV存储进行交互。它公开了用于从KV存储中插入，更新，读取和删除的顶级命令。<br>使用值“5”创建或更新名为“redis / config / connections”的键：</p>
+<pre><code>./consul kv put redis/config/connections 5</code></pre>
+<p>   读回这个值：</p>
+<pre><code>./consul kv get redis/config/connections</code></pre>
+<p>   或获取详细的关键信息：</p>
+<pre><code>./consul kv get -detailed redis/config/connections</code></pre>
+<p>   最后，删除密钥：</p>
+<pre><code>./consul kv delete redis/config/connections</code></pre>
+<h2 id="leave"><a href="#leave" class="headerlink" title="leave"></a>leave</h2><p>leave命令触发代理的正常离开和关闭进程。 它用于确保其他节点将代理视为“离开了”而不是“失败了”。 离开了的节点在带快照重新启动时不会尝试重新加入群集。</p>
+<h2 id="license"><a href="#license" class="headerlink" title="license"></a>license</h2><p>这个是企业级consul所带功能，略。</p>
+<h2 id="lock"><a href="#lock" class="headerlink" title="lock"></a>lock</h2><p>lock命令提供了一种简单分布式锁的机制。在KV存储中的给定前缀处创建锁（或信号量），并且仅在保持时，调用子进程。如果锁丢失或通信中断，子进程将终止。</p>
+<p>当-n = 1时，只存在一个提供互斥的锁持有者或领导者。 设置更高的值会切换到允许多个持有者协调的信号量。另外，提供的前缀必须具有写权限</p>
+<p>下面举个互斥锁的例子：<br>获得锁的进程会睡眠10s, 没拿到锁的会在1s内因超时被终止。<br>1.首先在kv存储放入一个键值对。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;consul kv put redis&#x2F;config&#x2F;connections 1</span><br></pre></td></tr></table></figure>
+<p>2.然后打开两个终端，切换到consul安装的目录，分别执行以下命令。</p>
+<pre><code>./consul lock -n=1 -timeout=1s  redis/config/connections  sleep 10</code></pre>
+<p>拿到锁的正常执行，睡眠10s后，执行完毕。<br><img src="https://img-blog.csdnimg.cn/20190609161751587.png" alt="在这里插入图片描述"><br>没拿到锁的因获取锁超时（这里设置是1s）被中止。<br><img src="https://img-blog.csdnimg.cn/20190609161805243.png" alt="在这里插入图片描述"></p>
+<h2 id="login"><a href="#login" class="headerlink" title="login"></a>login</h2><p>login命令将使用请求的auth方法将提供的第三方凭证与新创建的Consul ACL令牌交换。 配对命令consul logout应该用于销毁以这种方式创建的任何令牌，以避免资源泄漏。</p>
+<ul>
+<li><p>bearer-token-file = <string>  - 包含要与此auth方法一起使用的秘密承载令牌的文件的路径。</p>
+</li>
+<li><p>meta = <value>  - 在令牌上设置的元数据，格式为key = value。 可以多次指定该标志以设置多个元字段。</p>
+</li>
+<li><p>method = <string>  - 要登录的auth方法的名称。</p>
+</li>
+<li><p>token-sink-file = <string>  - 最新令牌的SecretID在此文件中保持最新。</p>
+</li>
+<li><p>  $ consul login -method ‘minikube’ \</p>
+<pre><code>  -bearer-token-file &#39;/run/secrets/kubernetes.io/serviceaccount/token&#39; \
+  -token-sink-file &#39;consul.token&#39;</code></pre>
+<p>  $ cat consul.token<br>  36103ae4-6731-e719-f53a-d35188cfa41d</p>
+<p>由于这里我还没有学习kubernetes，后面有机会可以补上。</p>
+</li>
+</ul>
+<h2 id="logout"><a href="#logout" class="headerlink" title="logout"></a>logout</h2><p>如果是从consul login创建的，则logout命令将销毁提供的令牌。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ consul logout -token-file &#39;consul.token&#39;</span><br></pre></td></tr></table></figure>
+
+<h2 id="maint"><a href="#maint" class="headerlink" title="maint"></a>maint</h2><p>maint命令提供对服务维护模式的控制。 使用该命令，可以将节点提供的服务或节点上的所有服务标记为“维护中”。 在此操作模式下，该服务不会出现在DNS查询结果或API结果中。 这有效地将服务从服务的可用“健康”节点池中取出。</p>
+<p>通过在服务的紧急状态下注册运行状况检查来激活维护模式，并通过取消注册运行状况检查来取消激活维护模式。<br>下面注册一个helloservice1，在postman中，对应位置输入以下参数。<br><img src="https://img-blog.csdnimg.cn/20190609164128986.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"> PUT http:&#x2F;&#x2F;localhost:8500&#x2F;v1&#x2F;agent&#x2F;service&#x2F;register?token&#x3D;cd76a0f7-5535-40cc-8696-073462acc6c7</span><br><span class="line">&#123;</span><br><span class="line">    &quot;ID&quot;: &quot;helloservice1&quot;,</span><br><span class="line">    &quot;Name&quot;: &quot;helloservice&quot;,</span><br><span class="line">    &quot;Tags&quot;: [</span><br><span class="line">        &quot;v1&quot;,</span><br><span class="line">        &quot;master&quot;</span><br><span class="line">    ],</span><br><span class="line">    &quot;Address&quot;: &quot;127.0.0.1&quot;,</span><br><span class="line">    &quot;Port&quot;: 8000,</span><br><span class="line">    &quot;Meta&quot;: &#123;</span><br><span class="line">        &quot;api_version&quot;: &quot;1.0&quot;</span><br><span class="line">    &#125;,</span><br><span class="line">    &quot;EnableTagOverride&quot;: false,</span><br><span class="line">    &quot;Check&quot;: &#123;</span><br><span class="line">        &quot;DeregisterCriticalServiceAfter&quot;: &quot;90m&quot;,</span><br><span class="line">        &quot;HTTP&quot;: &quot;http:&#x2F;&#x2F;www.baidu.com&#x2F;&quot;,</span><br><span class="line">        &quot;Interval&quot;: &quot;10s&quot;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;　</span><br></pre></td></tr></table></figure>
+<p>让服务处于维护状态</p>
+<pre><code>./consul maint -enable -service helloservice1 -reason &quot;need to update&quot;</code></pre>
+<p>让服务取消维护状态</p>
+<pre><code>./consul maint -disable -service helloservice1</code></pre>
+<h2 id="members"><a href="#members" class="headerlink" title="members"></a>members</h2><p>members命令输出Consul代理知道的当前成员列表及其状态。 节点的状态只能是“alive”，“left”或“failed”。<br>处于“failed”状态的节点仍然列出，因为在故障实际上只是网络分区的情况下，Consul会尝试在一定时间内重新连接故障节点。<br>单机版输出：<br><img src="https://img-blog.csdnimg.cn/2019060916444157.png"><br>集群版输出：<br><img src="https://img-blog.csdnimg.cn/20190609164626550.png" alt="在这里插入图片描述"></p>
+<h2 id="monitor"><a href="#monitor" class="headerlink" title="monitor"></a>monitor</h2><p>monitor命令用于连接和跟踪正在运行的Consul代理的日志。 Monitor将显示最近的日志，然后继续关注日志，直到中断或远程代理退出之前不会退出。</p>
+<p>monitor命令的强大之处在于它允许您以相对较高的日志级别（例如“warn”）记录代理，但仍然可以访问debug日志并在必要时查看debug日志。</p>
+<ul>
+<li>log-level - 要显示的消息的日志级别。默认情况下，这是“info”。此日志级别可能比代理配置为运行时更详细。可用的日志级别为“trace”，“debug”，“info”，“warn”和“err”。</li>
+</ul>
+<p>举个例子</p>
+<pre><code>./consul monitor debug</code></pre>
+<h2 id="operator"><a href="#operator" class="headerlink" title="operator"></a>operator</h2><p>operator命令为Consul操作员提供集群级工具，例如与Raft子系统交互。具体子命令的使用说明记得使用–help<br>比如：</p>
+<pre><code>./consul operator raft --help</code></pre>
+<p>下面列出raft对等集：<br>单机版<br><img src="https://img-blog.csdnimg.cn/20190609165401468.png" alt="在这里插入图片描述"><br>集群版<br><img src="https://img-blog.csdnimg.cn/20190609165743690.png" alt="在这里插入图片描述"><br>可以看到只有server agent才参加raft 对等集的一部分。</p>
+<h2 id="reload"><a href="#reload" class="headerlink" title="reload"></a>reload</h2><p>reload命令会触发代理的配置文件重新加载。</p>
+<p>SIGHUP信号通常用于触发重新加载配置，但在某些情况下，触发CLI可能更方便。</p>
+<p>此命令与信号的操作相同，这意味着它将触发重新加载，但不会等待重新加载完成。 重新加载的任何错误都将出现在代理日志中，而不会出现在此命令的输出中。</p>
+<p>注意<br>并非所有配置选项都可重新加载。 有关支持哪些选项的详细信息，<a target="_blank" rel="noopener" href="https://www.consul.io/docs/agent/options.html#reloadable-configuration">请参阅代理选项页面上的可重新加载配置部分。</a></p>
+<p>举个例子：<br>我们将一开始的配置文件，config.json 中的 log_level 由 info 改为 debug 。</p>
+<pre><code>./consul reload</code></pre>
+<p>可以在consul agent运行的命令行中看到在重新加载配置。<br><img src="https://img-blog.csdnimg.cn/20190609170938133.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h2 id="rtt（round-trip-time"><a href="#rtt（round-trip-time" class="headerlink" title="rtt（round trip time)"></a>rtt（round trip time)</h2><p>rtt命令使用Consul的集群网络坐标模型估计两个节点之间的网络往返时间。<br>由于这里需要多个server，所以这里我用了<a target="_blank" rel="noopener" href="https://blog.csdn.net/YellowStar5/article/details/90728468">前面一篇文章在虚拟机上搭建的集群</a>。<br><img src="https://img-blog.csdnimg.cn/20190608210239759.png" alt="在这里插入图片描述"><br>这里由于我只有一个数据中心，没法实验多个数据中心的rtt， 不过使用方法类似，如下</p>
+<pre><code> $ consul rtt -wan n1.dc1 n2.dc2
+    Estimated n1.dc1 &lt;-&gt; n2.dc2 rtt: 1.275 ms (using WAN coordinates)</code></pre>
+<h2 id="services"><a href="#services" class="headerlink" title="services"></a>services</h2><p>services命令具有子命令，用于与向本地代理注册的Consul服务进行交互。 它们提供了有用的命令，例如注册和注销，以便在脚本，开发模式等中轻松注册服务。要查看目录中的所有服务，而不是仅查看代理本地服务，请使用./consul catalog services命令。<br>创建一个简单的服务：</p>
+<pre><code>./consul services register -name=web</code></pre>
+<p>从一个配置 文件中 创建服务</p>
+<pre><code>$ cat web.json
+&#123;
+  &quot;Service&quot;: &#123;
+    &quot;Name&quot;: &quot;web&quot;
+  &#125;
+&#125;
+
+$  ./consul services register web.json</code></pre>
+<p>注销一个服务(两种方式都可以）：</p>
+<pre><code>$ ./consul services deregister web.json
+
+$ ./consul services deregister -id web</code></pre>
+<h2 id="snapshot"><a href="#snapshot" class="headerlink" title="snapshot"></a>snapshot</h2><p>snapshot命令具有子命令，用于保存，恢复和检查Consul服务器的状态以进行灾难恢复。 这些是原子时间点快照，包括键/值条目，服务目录，准备好的查询，会话和ACL。<br>save：保存Consul服务器状态的快照<br>restore: 恢复Consul服务器状态的快照<br>inspect: 显示有关Consul快照文件的信息<br><img src="https://img-blog.csdnimg.cn/20190608204914304.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h2 id="tls"><a href="#tls" class="headerlink" title="tls"></a>tls</h2><p>tls命令用于帮助为Consul TLS设置CA和证书。</p>
+<h2 id="validate"><a href="#validate" class="headerlink" title="validate"></a>validate</h2><p>consul validate命令对Consul配置文件执行彻底的健全性测试。 对于给定的每个文件或目录，该命令将尝试像consul agent命令那样解析内容，并捕获任何错误。</p>
+<p><strong>这对于仅对配置进行测试很有用，而无需实际启动代理。</strong> 这将执行代理程序将执行的所有验证，因此应该为此提供将由代理程序加载的完整配置文件集。 此命令无法对部分配置片段进行操作，因为这些片段不会通过完整的代理验证。<br>比如说验证下我们一开始的配置文件</p>
+<pre><code>./consul validate config.json</code></pre>
+<p><img src="https://img-blog.csdnimg.cn/2019060820302690.png" alt="在这里插入图片描述"></p>
+<h2 id="version"><a href="#version" class="headerlink" title="version"></a>version</h2><p>version命令打印Consul的版本以及它与其他代理进行通信时理解的协议版本。</p>
+<pre><code>./consul version</code></pre>
+<h1 id="最后的说明"><a href="#最后的说明" class="headerlink" title="最后的说明"></a>最后的说明</h1><p>1.由于篇幅有限，本文的大体上是对命令行的基本介绍，想要用好命令行还需要读读官方文档和linux的说明文档。</p>
+<p>2.另外文中出现的集群版：请参考我的另一篇文章，<a target="_blank" rel="noopener" href="https://blog.csdn.net/YellowStar5/article/details/90728468">Consul1.5.0 带ACL控制集群搭建</a></p>
+<h1 id="参考："><a href="#参考：" class="headerlink" title="参考："></a>参考：</h1><p><a target="_blank" rel="noopener" href="https://www.consul.io/docs/commands/index.html">https://www.consul.io/docs/commands/index.html</a><br><a target="_blank" rel="noopener" href="https://www.consul.io/docs/acl/index.html">https://www.consul.io/docs/acl/index.html</a><br><a target="_blank" rel="noopener" href="https://www.consul.io/docs/agent/config_entries.html">https://www.consul.io/docs/agent/config_entries.html</a></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Consul/" rel="tag"># Consul</a>
+              <a href="/tags/%E6%9C%8D%E5%8A%A1%E5%8F%91%E7%8E%B0%E4%B8%8E%E6%B3%A8%E5%86%8C/" rel="tag"># 服务发现与注册</a>
+              <a href="/tags/Consul%E5%91%BD%E4%BB%A4%E8%A1%8C/" rel="tag"># Consul命令行</a>
+              <a href="/tags/Consul-Cli/" rel="tag"># Consul Cli</a>
+              <a href="/tags/Consul-ACL/" rel="tag"># Consul ACL</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/Consul%20%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5%EF%BC%8C%E5%90%8C%E7%B1%BB%E6%AF%94%E8%BE%83%E5%92%8C%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/" rel="prev" title="Consul 基本概念，同类比较和内部原理">
+                  <i class="fa fa-chevron-left"></i> Consul 基本概念，同类比较和内部原理
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/Lombok-%E4%BD%BF%E7%94%A8%E5%AE%8C%E5%85%A8%E6%8C%87%E5%8D%97/" rel="next" title="Lombok 使用完全指南">
+                  Lombok 使用完全指南 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">YellowStar5</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : 'c7399bb9f366b510f657',
+      clientSecret: '952cfd3a5207d8ddfc497983491a1089cf2985c4',
+      repo        : 'gitalk',
+      owner       : 'codercuixin',
+      admin       : ['codercuixin'],
+      id          : '4a0b43016125cd1c256992e129e3901a',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

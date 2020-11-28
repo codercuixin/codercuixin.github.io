@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.1/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yellowstar5.cn","root":"/","scheme":"Muse","version":"8.0.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
+  </script>
+
+  <meta name="description" content="原文地址：https:&#x2F;&#x2F;wiki.openjdk.java.net&#x2F;display&#x2F;HotSpot&#x2F;Synchronization Synchronization and Object Locking (同步和对象锁定)One of the major strengths of the Java programming language is its built-in support for m">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Synchronization 中英文对照翻译">
+<meta property="og:url" content="yellowstar5.cn/Synchronization-%E4%B8%AD%E8%8B%B1%E6%96%87%E5%AF%B9%E7%85%A7%E7%BF%BB%E8%AF%91/index.html">
+<meta property="og:site_name" content="YellowStar5">
+<meta property="og:description" content="原文地址：https:&#x2F;&#x2F;wiki.openjdk.java.net&#x2F;display&#x2F;HotSpot&#x2F;Synchronization Synchronization and Object Locking (同步和对象锁定)One of the major strengths of the Java programming language is its built-in support for m">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200902093348286.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70#pic_center">
+<meta property="article:published_time" content="2020-09-02T03:26:38.000Z">
+<meta property="article:modified_time" content="2020-09-02T03:29:11.945Z">
+<meta property="article:author" content="YellowStar5">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="Synchronization">
+<meta property="article:tag" content="重量级锁">
+<meta property="article:tag" content="轻量级锁">
+<meta property="article:tag" content="偏向锁">
+<meta property="article:tag" content="heavyweight lock">
+<meta property="article:tag" content="lightweight lock">
+<meta property="article:tag" content="biased lock">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://img-blog.csdnimg.cn/20200902093348286.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70#pic_center">
+
+
+<link rel="canonical" href="yellowstar5.cn/Synchronization-%E4%B8%AD%E8%8B%B1%E6%96%87%E5%AF%B9%E7%85%A7%E7%BF%BB%E8%AF%91/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Synchronization 中英文对照翻译 | YellowStar5</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">YellowStar5</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">风物长宜放眼量</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <section class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#Synchronization-and-Object-Locking-%E5%90%8C%E6%AD%A5%E5%92%8C%E5%AF%B9%E8%B1%A1%E9%94%81%E5%AE%9A"><span class="nav-number">1.</span> <span class="nav-text">Synchronization and Object Locking (同步和对象锁定)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Source-Code-Hints-%E6%BA%90%E4%BB%A3%E7%A0%81%E6%8F%90%E7%A4%BA"><span class="nav-number">2.</span> <span class="nav-text">Source Code Hints (源代码提示)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#References-%E5%8F%82%E8%80%83"><span class="nav-number">3.</span> <span class="nav-text">References (参考)</span></a></li></ol></div>
+        </section>
+        <!--/noindex-->
+
+        <section class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">YellowStar5</p>
+  <div class="site-description" itemprop="description">Java后端程序员，想做个手艺人。</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">14</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">34</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://www.douban.com/people/146579421/" title="豆瓣 → https:&#x2F;&#x2F;www.douban.com&#x2F;people&#x2F;146579421&#x2F;" rel="noopener" target="_blank"><i class="fas fa-book-reader fa-fw"></i>豆瓣</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/codercuixin" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;codercuixin" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/u/5509464340" title="微博 → https:&#x2F;&#x2F;weibo.com&#x2F;u&#x2F;5509464340" rel="noopener" target="_blank"><i class="fab fa-weibo fa-fw"></i>微博</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://yellowstar5.cn/atom.xml" title="RSS → https:&#x2F;&#x2F;yellowstar5.cn&#x2F;atom.xml"><i class="fa fa-rss-square fa-fw"></i>RSS</a>
+      </span>
+  </div>
+
+
+
+        </section>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="yellowstar5.cn/Synchronization-%E4%B8%AD%E8%8B%B1%E6%96%87%E5%AF%B9%E7%85%A7%E7%BF%BB%E8%AF%91/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="YellowStar5">
+      <meta itemprop="description" content="Java后端程序员，想做个手艺人。">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="YellowStar5">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Synchronization 中英文对照翻译
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2020-09-02 11:26:38 / 修改时间：11:29:11" itemprop="dateCreated datePublished" datetime="2020-09-02T11:26:38+08:00">2020-09-02</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/JUC/" itemprop="url" rel="index"><span itemprop="name">JUC</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p><strong>原文地址：<a target="_blank" rel="noopener" href="https://wiki.openjdk.java.net/display/HotSpot/Synchronization">https://wiki.openjdk.java.net/display/HotSpot/Synchronization</a></strong></p>
+<h3 id="Synchronization-and-Object-Locking-同步和对象锁定"><a href="#Synchronization-and-Object-Locking-同步和对象锁定" class="headerlink" title="Synchronization and Object Locking (同步和对象锁定)"></a>Synchronization and Object Locking (同步和对象锁定)</h3><p>One of the major strengths of the Java programming language is its built-in support for multi-threaded programs. An object that is shared between multiple threads can be locked in order to synchronize its access. Java provides primitives to designate critical code regions, which act on a shared object and which may be executed only by one thread at a time. The first thread that enters the region locks the shared object. When a second thread is about to enter the same region, it must wait until the first thread has unlocked the object again.</p>
+<p>Java 编程语言的主要优势之一是其对多线程程序的内置支持。 可以锁定在多个线程之间共享的对象，以便同步其访问。 Java 提供了用于指定关键代码区域的原语，这些关键代码区域作用于共享对象，并且可能一次只能由一个线程执行。 进入该区域的第一个线程将锁定共享对象。 当第二个线程即将进入同一区域时，它必须等待，直到第一个线程再次将对象解锁。</p>
+<a id="more"></a>
+<p>In the Java HotSpot™ VM, every object is preceded by a class pointer and a header word. The header word, which stores the identity hash code as well as age and marking bits for generational garbage collection, is also used to implement a thin lock scheme [Agesen99, Bacon98]. The following figure shows the layout of the header word and the representation of different object states.</p>
+<p>在 Java HotSpot™VM 中，每个对象前面都有一个类指针和一个 header word。 该 header word 存储身份哈希码以及年龄和标记位以进行代际垃圾收集，还用于实现 thin lock 机制 [Agesen99，Bacon98]。 下图显示了 header word 的布局以及不同对象状态的表示。<br><img src="https://img-blog.csdnimg.cn/20200902093348286.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70#pic_center" alt="Synchronization"><br>The right-hand side of the figure illustrates the standard locking process. As long as an object is unlocked, the last two bits have the value 01. When a method synchronizes on an object, the header word and a pointer to the object are stored in a lock record within the current stack frame. Then the VM attempts to install a pointer to the lock record in the object’s header word via a compare-and-swap operation. If it succeeds, the current thread afterwards owns the lock. Since lock records are always aligned at word boundaries, the last two bits of the header word are then 00 and identify the object as being locked.</p>
+<p>图的右侧说明了标准锁定过程。 只要对象是未锁定的，最后两位的值将为 01。当方法在对象上同步时，该header word 和指向该对象的指针将存储在当前堆栈帧内的锁定记录( lock record ) 中。 然后，VM 尝试通过比较和交换( compare-and-swap )操作在对象的 header word 中安装一个指向锁定记录的指针。 如果成功，则当前线程将拥有该锁。 由于锁定记录始终在字边界对齐，因此header word的最后两位为00，然后将对象标识为已锁定。</p>
+<p>If the compare-and-swap operation fails because the object was locked before, the VM first tests whether the header word points into the method stack of the current thread. In this case, the thread already owns the object’s lock and can safely continue its execution. For such a recursively locked object, the lock record is initialized with 0 instead of the object’s header word. Only if two different threads concurrently synchronize on the same object, the thin lock must be inflated to a heavyweight monitor for the management of waiting threads.</p>
+<p>如果比较交换操作由于对象之前被锁定而失败，则 VM 首先测试 header word 是否指向当前线程的方法堆栈。在这种情况下，线程已经拥有对象的锁，可以安全地继续执行它。对于这种递归锁定的对象，将锁定记录初始化为0而不是对象的header word。仅当两个不同的线程同时在同一个对象上同步时，才必须将 thin lock（轻量级锁的一种） 膨胀到重量级锁（heavyweight monitor），以管理等待的线程。</p>
+<p>Thin locks are a lot cheaper than inflated locks, but their performance suffers from the fact that every compare-and-swap operation must be executed atomically on multi-processor machines, although most objects are locked and unlocked only by one particular thread. In Java 6, this drawback is addressed by a so-called store-free biased locking technique [Russell06], which uses concepts similar to [Kawachiya02]. Only the first lock acquisition performs an atomic compare-and-swap to install an ID of the locking thread into the header word. The object is then said to be biased towards the thread. Future locking and unlocking of the object by the same thread do not require any atomic operation or an update of the header word. Even the lock record on the stack is left uninitialized as it will never be examined for a biased object.</p>
+<p><strong>thin lock</strong> 比膨胀锁 (inflated lock，也叫 heavyweight monitor)便宜很多，但是它们的性能受到以下事实的困扰：<strong>尽管大多数对象只能由一个特定的线程锁定和解锁，但每个比较交换操作都必须在多处理器计算机上以原子方式执行</strong>（thin lock的实现原理）。在 Java 6 中，此缺陷已通过所谓的“无存储有偏向锁定” ( store-free biased locking )技术 [Russell06] 解决，该技术使用类似于 [Kawachiya02] 的概念。<strong>仅第一个锁获取执行一个原子比较和交换，以将锁定线程的 ID 安装到 header word 中。然后称该对象偏向于该线程。同一线程将来对对象的锁定和解锁不需要任何原子操作或 header word 的更新。甚至堆栈上的锁定记录也不会被初始化，因为对于一个偏向的对象，它将永远不会被检查</strong> （biased lock的实现方式）。</p>
+<p>When a thread synchronizes on an object that is biased towards another thread, the bias must be revoked by making the object appear as if it had been locked the regular way. The stack of the bias owner is traversed, lock records associated with the object are adjusted according to the thin lock scheme, and a pointer to the oldest of them is installed in the object’s header word. All threads must be suspended for this operation. The bias is also revoked when the identity hash code of an object is accessed since the hash code bits are shared with the thread ID.</p>
+<p><strong>当一个线程在偏向另一个线程的对象上同步时，该偏向必须通过使该对象看起来像它已被常规方式锁定被撤销</strong>。遍历偏向所有者的堆栈，根据 thin lock 方案调整与对象关联的锁定记录，并在对象的 header word 中安装指向它们中最旧的指针。此操作必须暂停所有线程。<strong>当访问对象的身份哈希码时，由于此哈希码位与线程ID共享，因此该偏向也要被撤销</strong>。</p>
+<p>Objects that are explicitly designed to be shared between multiple threads, such as producer/consumer queues, are not suitable for biased locking. Therefore, biased locking is disabled for a class if revocations for its instances happened frequently in the past. This is called bulk revocation. If the locking code is invoked on an instance of a class for which biased locking was disabled, it performs the standard thin locking. Newly allocated instances of the class are marked as non-biasable.</p>
+<p>明确设计为在多个线程之间共享的对象（例如生产者/消费者队列）不适合于偏向锁。<strong>因此，如果某个类的实例的撤销在过去频繁发生，则该类的偏置锁将被禁用。这称为批量撤销（bulk revocation）</strong>。如果在禁用了偏向锁的类的实例上调用锁定代码，该锁定代码将执行标准的 thin locking。该类的新分配实例被标记为不可偏向的（non-biasable）。</p>
+<p>A similar mechanism, called bulk rebiasing, optimizes situations in which objects of a class are locked and unlocked by different threads but never concurrently. It invalidates the bias of all instances of a class without disabling biased locking. An epoch value in the class acts as a timestamp that indicates the validity of the bias. This value is copied into the header word upon object allocation. Bulk rebiasing can then efficiently be implemented as an increment of the epoch in the appropriate class. The next time an instance of this class is going to be locked, the code detects a different value in the header word and rebiases the object towards the current thread.</p>
+<p><strong>一种类似的机制，称为批量重偏向( bulk rebiasing )，可以优化类对象被不同线程锁定和解锁但绝不并行的情况。它使类的所有实例的偏向无效，而不会禁用偏向锁定</strong>。类中的一个 <strong><em>epoch</em></strong> 值用作指示偏向有效性的时间戳。在分配对象时，此值将复制到 header word 中。然后，<strong>批量重偏向可以被高效实现为在适当的类中增加 epoch值</strong>。下次此类的实例将被锁定时，代码将在 header word 中检测到一个不同的epoch 值，并将该对象偏向当前线程。</p>
+<h3 id="Source-Code-Hints-源代码提示"><a href="#Source-Code-Hints-源代码提示" class="headerlink" title="Source Code Hints (源代码提示)"></a>Source Code Hints (源代码提示)</h3><p>Synchronization affects multiple parts of the JVM: The structure of the object header is defined in the classes oopDesc and markOopDesc, the code for thin locks is integrated in the interpreter and compilers, and the class ObjectMonitor represents inflated locks. Biased locking is centralized in the class BiasedLocking. It can be enabled via the flag -XX:+UseBiasedLocking and disabled via -XX:-UseBiasedLocking. It is enabled by default for Java 6 and Java 7, but activated only some seconds after the application startup. Therefore, beware of short-running micro-benchmarks. If necessary, turn off the delay using the flag -XX:BiasedLockingStartupDelay=0.</p>
+<p>同步影响JVM的多个部分：对象头( object header )的结构在 oopDesc 和 markOopDesc 类中定义，thin locks 的代码集成在解释器和编译器中，而 ObjectMonitor 类则表示膨胀锁。 偏置锁定集中在 BiasedLocking 类中。 可以通过标志 -XX:+UseBiasedLocking 启用它，并通过  -XX:-UseBiasedLocking 禁用它。 默认情况下，Java 6 和 Java 7 启用了此功能，但在应用程序启动后仅激活了几秒钟。 因此，提防短期运行的微基准测试。 如有必要，请使用标志 -XX:BiasedLockingStartupDelay=0 关闭延迟。</p>
+<h3 id="References-参考"><a href="#References-参考" class="headerlink" title="References (参考)"></a>References (参考)</h3><p> [Agesen99] O. Agesen, D. Detlefs, A. Garthwaite, R. Knippel, Y. S. Ramakrishna, D. White: An Efficient Meta-lock for Implementing Ubiquitous Synchronization. In Proceedings of the ACM SIGPLAN Conference on Object-Oriented Programming, Systems, Languages, and Applications, pages 207-222. ACM Press, 1999. doi:10.1145/320384.320402</p>
+<p>[Bacon98] D. F. Bacon, R. Konuru, C. Murthy, M. Serrano: Thin Locks: Featherweight Synchronization for Java. In Proceedings of the ACM SIGPLAN Conference on Programming Language Design and Implementation, pages 258-268. ACM Press, 1998. doi:10.1145/277650.277734</p>
+<p>[Kawachiya02] K. Kawachiya, A. Koseki, T. Onodera: Lock Reservation: Java Locks can Mostly do without Atomic Operations. In Proceedings of the ACM SIGPLAN Conference on Object-Oriented Programming, Systems, Languages, and Applications, pages 130-141. ACM Press, 2002. doi:10.1145/582419.582433</p>
+<p>[Russel06] K. Russell, D. Detlefs: Eliminating Synchronization-Related Atomic Operations with Biased Locking and Bulk Rebiasing. In Proceedings of the ACM SIGPLAN Conference on Object-Oriented Programming, Systems, Languages, and Applications, pages 263-272. ACM Press, 2006. doi:10.1145/1167473.1167496</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Java/" rel="tag"># Java</a>
+              <a href="/tags/Synchronization/" rel="tag"># Synchronization</a>
+              <a href="/tags/%E9%87%8D%E9%87%8F%E7%BA%A7%E9%94%81/" rel="tag"># 重量级锁</a>
+              <a href="/tags/%E8%BD%BB%E9%87%8F%E7%BA%A7%E9%94%81/" rel="tag"># 轻量级锁</a>
+              <a href="/tags/%E5%81%8F%E5%90%91%E9%94%81/" rel="tag"># 偏向锁</a>
+              <a href="/tags/heavyweight-lock/" rel="tag"># heavyweight lock</a>
+              <a href="/tags/lightweight-lock/" rel="tag"># lightweight lock</a>
+              <a href="/tags/biased-lock/" rel="tag"># biased lock</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/JSR-133-FAQ-%E4%B8%AD%E8%8B%B1%E5%AF%B9%E7%85%A7%E7%89%88/" rel="prev" title="JSR-133 FAQ 中英对照版翻译">
+                  <i class="fa fa-chevron-left"></i> JSR-133 FAQ 中英对照版翻译
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/synchronized%E5%85%B3%E9%94%AE%E5%AD%97%E7%9A%84%E5%86%85%E5%AD%98%E8%AF%AD%E4%B9%89%E5%8F%8A%E5%AE%9E%E7%8E%B0/" rel="next" title="synchronized关键字的内存语义及实现">
+                  synchronized关键字的内存语义及实现 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">YellowStar5</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : 'c7399bb9f366b510f657',
+      clientSecret: '952cfd3a5207d8ddfc497983491a1089cf2985c4',
+      repo        : 'gitalk',
+      owner       : 'codercuixin',
+      admin       : ['codercuixin'],
+      id          : '690471e88e143ed097ca269e3ad3bc98',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

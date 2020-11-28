@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.1/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yellowstar5.cn","root":"/","scheme":"Muse","version":"8.0.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
+  </script>
+
+  <meta name="description" content="由于本人能力有限，如有错误，烦请指出。原文地址：http:&#x2F;&#x2F;gee.cs.oswego.edu&#x2F;dl&#x2F;jmm&#x2F;cookbook.html我博客上中英对照版的地址：https:&#x2F;&#x2F;yellowstar5.cn&#x2F;direct&#x2F;The%20JSR-133%20Cookbook-chinese.html Preface: Over the 10+ years since this was initial">
+<meta property="og:type" content="article">
+<meta property="og:title" content="The JSR-133 Cookbook for Compiler Writers 中英对照版翻译">
+<meta property="og:url" content="yellowstar5.cn/The-JSR-133-Cookbook-for-Compiler-Writers-%E4%B8%AD%E8%8B%B1%E5%AF%B9%E7%85%A7%E7%89%88%E7%BF%BB%E8%AF%91/index.html">
+<meta property="og:site_name" content="YellowStar5">
+<meta property="og:description" content="由于本人能力有限，如有错误，烦请指出。原文地址：http:&#x2F;&#x2F;gee.cs.oswego.edu&#x2F;dl&#x2F;jmm&#x2F;cookbook.html我博客上中英对照版的地址：https:&#x2F;&#x2F;yellowstar5.cn&#x2F;direct&#x2F;The%20JSR-133%20Cookbook-chinese.html Preface: Over the 10+ years since this was initial">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200914145326998.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70#pic_center">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/2020091415113790.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70#pic_center">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200914151307978.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70#pic_center">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200914151827498.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70#pic_center">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200914152607293.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70#pic_center">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200914153542631.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70#pic_center">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/2020091415594649.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70#pic_center">
+<meta property="article:published_time" content="2020-08-21T11:16:21.000Z">
+<meta property="article:modified_time" content="2020-09-14T10:11:49.743Z">
+<meta property="article:author" content="YellowStar5">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="Java内存模型">
+<meta property="article:tag" content="memory barrier">
+<meta property="article:tag" content="JSR-133 Cookbook">
+<meta property="article:tag" content="atomic instruction">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://img-blog.csdnimg.cn/20200914145326998.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70#pic_center">
+
+
+<link rel="canonical" href="yellowstar5.cn/The-JSR-133-Cookbook-for-Compiler-Writers-%E4%B8%AD%E8%8B%B1%E5%AF%B9%E7%85%A7%E7%89%88%E7%BF%BB%E8%AF%91/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>The JSR-133 Cookbook for Compiler Writers 中英对照版翻译 | YellowStar5</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">YellowStar5</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">风物长宜放眼量</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <section class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Reorderings-%E9%87%8D%E6%8E%92%E5%BA%8F"><span class="nav-number">1.</span> <span class="nav-text">Reorderings (重排序)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Volatiles-and-Monitors-volatile-%E5%92%8C%E7%9B%91%E8%A7%86%E5%99%A8"><span class="nav-number">1.1.</span> <span class="nav-text">Volatiles and Monitors (volatile 和监视器)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Final-Fields-final%E5%AD%97%E6%AE%B5"><span class="nav-number">1.2.</span> <span class="nav-text">Final Fields (final字段)</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Memory-Barriers-%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C"><span class="nav-number">2.</span> <span class="nav-text">Memory Barriers (内存屏障)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Categories-%E7%9B%AE%E5%BD%95"><span class="nav-number">2.1.</span> <span class="nav-text">Categories (目录)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Data-Dependency-and-Barriers-%E6%95%B0%E6%8D%AE%E4%BE%9D%E8%B5%96%E6%80%A7%E5%92%8C%E5%B1%8F%E9%9A%9C"><span class="nav-number">2.2.</span> <span class="nav-text">Data Dependency and Barriers (数据依赖性和屏障)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Interactions-with-Atomic-Instructions-%E4%B8%8E%E5%8E%9F%E5%AD%90%E6%8C%87%E4%BB%A4%E7%9A%84%E4%BA%A4%E4%BA%92"><span class="nav-number">2.3.</span> <span class="nav-text">Interactions with Atomic Instructions (与原子指令的交互)</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Multiprocessors-%E5%A4%9A%E5%A4%84%E7%90%86%E5%99%A8"><span class="nav-number">3.</span> <span class="nav-text">Multiprocessors (多处理器)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Notes-%E5%A4%87%E6%B3%A8"><span class="nav-number">3.1.</span> <span class="nav-text">Notes (备注)</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Recipes-%E9%A3%9F%E8%B0%B1"><span class="nav-number">4.</span> <span class="nav-text">Recipes (食谱)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Uniprocessors-%E5%8D%95%E5%A4%84%E7%90%86%E5%99%A8"><span class="nav-number">4.1.</span> <span class="nav-text">Uniprocessors (单处理器)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Inserting-Barriers-%E6%8F%92%E5%85%A5%E5%B1%8F%E9%9A%9C"><span class="nav-number">4.2.</span> <span class="nav-text">Inserting Barriers (插入屏障)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Removing-Barriers-%E6%B6%88%E9%99%A4%E5%B1%8F%E9%9A%9C"><span class="nav-number">4.3.</span> <span class="nav-text">Removing Barriers (消除屏障)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Miscellany-%E6%9D%82%E8%AE%B0"><span class="nav-number">4.4.</span> <span class="nav-text">Miscellany (杂记)</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Acknowledgments-%E8%87%B4%E8%B0%A2"><span class="nav-number">5.</span> <span class="nav-text">Acknowledgments (致谢)</span></a></li></ol></div>
+        </section>
+        <!--/noindex-->
+
+        <section class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">YellowStar5</p>
+  <div class="site-description" itemprop="description">Java后端程序员，想做个手艺人。</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">14</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">34</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://www.douban.com/people/146579421/" title="豆瓣 → https:&#x2F;&#x2F;www.douban.com&#x2F;people&#x2F;146579421&#x2F;" rel="noopener" target="_blank"><i class="fas fa-book-reader fa-fw"></i>豆瓣</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/codercuixin" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;codercuixin" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/u/5509464340" title="微博 → https:&#x2F;&#x2F;weibo.com&#x2F;u&#x2F;5509464340" rel="noopener" target="_blank"><i class="fab fa-weibo fa-fw"></i>微博</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://yellowstar5.cn/atom.xml" title="RSS → https:&#x2F;&#x2F;yellowstar5.cn&#x2F;atom.xml"><i class="fa fa-rss-square fa-fw"></i>RSS</a>
+      </span>
+  </div>
+
+
+
+        </section>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="yellowstar5.cn/The-JSR-133-Cookbook-for-Compiler-Writers-%E4%B8%AD%E8%8B%B1%E5%AF%B9%E7%85%A7%E7%89%88%E7%BF%BB%E8%AF%91/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="YellowStar5">
+      <meta itemprop="description" content="Java后端程序员，想做个手艺人。">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="YellowStar5">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          The JSR-133 Cookbook for Compiler Writers 中英对照版翻译
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2020-08-21 19:16:21" itemprop="dateCreated datePublished" datetime="2020-08-21T19:16:21+08:00">2020-08-21</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020-09-14 18:11:49" itemprop="dateModified" datetime="2020-09-14T18:11:49+08:00">2020-09-14</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/JUC/" itemprop="url" rel="index"><span itemprop="name">JUC</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p><strong>由于本人能力有限，如有错误，烦请指出。</strong><br><a target="_blank" rel="noopener" href="http://gee.cs.oswego.edu/dl/jmm/cookbook.html">原文地址</a>：<a target="_blank" rel="noopener" href="http://gee.cs.oswego.edu/dl/jmm/cookbook.html">http://gee.cs.oswego.edu/dl/jmm/cookbook.html</a><br><a href="https://yellowstar5.cn/direct/The%20JSR-133%20Cookbook-chinese.html">我博客上中英对照版的地址</a>：<a href="https://yellowstar5.cn/direct/The%20JSR-133%20Cookbook-chinese.html">https://yellowstar5.cn/direct/The%20JSR-133%20Cookbook-chinese.html</a></p>
+<p>Preface: Over the 10+ years since this was initially written, many processor and language memory model specifications and issues have become clearer and better understood. And many have not. While this guide is maintained to remain accurate, it is incomplete about some of these evolving details. For more extensive coverage, see especially the work of Peter Sewell and the <a target="_blank" rel="noopener" href="http://www.cl.cam.ac.uk/~pes20/weakmemory/index.html">Cambridge Relaxed Memory Concurrency Group</a></p>
+<p>前言： 自此指南最初编写以来已有十多年，许多处理器和语言内存模型规范和问题已经变得更加清晰和更好地被理解。 然而许多还没有。 尽管本指南一直被维护着以保持准确性，但关于一些不断发展的细节，此指南给出的内容并不完整。 有关更广泛的报道，尤其要参见 Peter Sewell 和 <a target="_blank" rel="noopener" href="http://www.cl.cam.ac.uk/~pes20/weakmemory/index.html">Cambridge Relaxed Memory Concurrency Group</a> 的工作。</p>
+<p>This is an unofficial guide to implementing the new <a target="_blank" rel="noopener" href="http://www.cs.umd.edu/~pugh/java/memoryModel/">Java Memory Model (JMM)</a> specified by <a target="_blank" rel="noopener" href="http://jcp.org/en/jsr/detail?id=133">JSR-133</a> . It provides at most brief backgrounds about why various rules exist, instead concentrating on their consequences for compilers and JVMs with respect to instruction reorderings, multiprocessor barrier instructions, and atomic operations. It includes a set of recommended recipes for complying to JSR-133. This guide is “unofficial” because it includes interpretations of particular processor properties and specifications. We cannot guarantee that the intepretations are correct. Also, processor specifications and implementations may change over time.</p>
+<p>这是实现由 <a target="_blank" rel="noopener" href="http://jcp.org/en/jsr/detail?id=133">JSR-133</a> 规范的新 <a target="_blank" rel="noopener" href="http://www.cs.umd.edu/~pugh/java/memoryModel/">Java Memory Model (JMM)</a> 的非官方指南。 它提供了有关为什么存在各种规则的最简短的背景，而不是专注于它们在指令重新排序，多处理器屏障指令和原子操作方面对编译器和JVM的影响。 它包括一组符合 JSR-133 的推荐食谱。 本指南是“非官方的”，因为它包含对特定处理器属性和规范的解释。 我们不能保证解释是正确的。 此外，处理器规范和实现可能会随时间而变化。</p>
+<h2 id="Reorderings-重排序"><a href="#Reorderings-重排序" class="headerlink" title="Reorderings (重排序)"></a>Reorderings (重排序)</h2><p>For a compiler writer, the JMM mainly consists of rules disallowing reorderings of certain instructions that access fields (where “fields” include array elements) as well as monitors (locks).</p>
+<p>对于一个编译器编写者来说，JMM主要由禁止对访问字段（其中“字段”包括数组元素）和监视器（锁）的某些指令进行重排序的规则组成。</p>
+<h3 id="Volatiles-and-Monitors-volatile-和监视器"><a href="#Volatiles-and-Monitors-volatile-和监视器" class="headerlink" title="Volatiles and Monitors (volatile 和监视器)"></a>Volatiles and Monitors (volatile 和监视器)</h3><p>The main JMM rules for volatiles and monitors can be viewed as a matrix with cells indicating that you cannot reorder instructions associated with particular sequences of bytecodes. This table is not itself the JMM specification; it is just a useful way of viewing its main consequences for compilers and runtime systems.<br>可以将 volatile 和监视器的主要 JMM 规则视为带有单元格的矩阵，其中单元格指示了你无法对与特定字节码序列相关的指令进行重排序。 这个表格本身不是 JMM 规范； 它只是查看其对编译器和运行时系统的主要影响的一种有用方法。<br><img src="https://img-blog.csdnimg.cn/20200914145326998.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70#pic_center" alt="在这里插入图片描述"></p>
+<a id="more"></a>
+<p>Where:</p>
+<ul>
+<li>Normal Loads are getfield, getstatic, array load of non-volatile fields.</li>
+<li>Normal Stores are putfield, putstatic, array store of non-volatile fields</li>
+<li>Volatile Loads are getfield, getstatic of volatile fields that are accessible by multiple threads</li>
+<li>Volatile Stores are putfield, putstatic of volatile fields that are accessible by multiple threads</li>
+<li>MonitorEnters (including entry to synchronized methods) are for lock objects accessible by multiple threads.</li>
+<li>MonitorExits (including exit from synchronized methods) are for lock objects accessible by multiple threads.</li>
+</ul>
+<p>其中:</p>
+<ul>
+<li>普通加载(Normal Loads)是 非volatile字段的 getfield，getstatic，数组加载</li>
+<li>普通存储(Normal Stores)是 非volatile字段的 putfield，putstatic，数组存储</li>
+<li>Volatile加载(Volatile Loads)是 volatile字段(该字段被多线程访问)的 getfield，getstatic加载</li>
+<li>Volatile存储(Volatile Stores)是 volatile字段(该字段被多线程访问)的 putfield，putstatic存储</li>
+<li>MonitorEnters(包括同步方法的开始)用于可由多个线程访问的锁对象。</li>
+<li>MonitorExits(包括同步方法的退出)用于可由多个线程访问的锁对象。</li>
+</ul>
+<p>The cells for Normal Loads are the same as for Normal Stores, those for Volatile Loads are the same as MonitorEnter, and those for Volatile Stores are same as MonitorExit, so they are collapsed together here (but are expanded out as needed in subsequent tables). We consider here only variables that are readable and writable as an atomic unit – that is, no bit fields, unaligned accesses, or accesses larger than word sizes available on a platform.</p>
+<p>Normal Loads 的单元格与 Normal Stores 的单元格相同， Volatile Loads 的单元格与 MonitorEnter 相同， 而 Volatile Stores 的单元格与 MonitorExit 相同，因此它们在此处折叠在一起（但根据需要在后续表格被展开）。 在这里，我们仅考虑以原子单位可读写的变量 —— 即没有位字段，未对齐的访问或大于平台上可用字长的访问。</p>
+<p>Any number of other operations might be present between the indicated 1st and 2nd operations in the table. So, for example, the “No” in cell [Normal Store, Volatile Store] says that a non-volatile store cannot be reordered with ANY subsequent volatile store; at least any that can make a difference in multithreaded program semantics.</p>
+<p>表中指示的 1st 和 2nd 操作之间可能存在任意数量的其他操作。 因此，例如，[Normal Store, Volatile Store]单元格中的”No”表示， 一个 非volatile存储 不能与任何后续的 voaltile存储 一起重排序； 至少是任何在多线程程序语义上有影响的重排序。</p>
+<p>The JSR-133 specification is worded such that the rules for both volatiles and monitors apply only to those that may be accessed by multiple threads. If a compiler can somehow (usually only with great effort) prove that a lock is only accessible from a single thread, it may be eliminated. Similarly, a volatile field provably accessible from only a single thread acts as a normal field. More fine-grained analyses and optimizations are also possible, for example, those relying on provable inaccessibility from multiple threads only during certain intervals.</p>
+<p>JSR-133规范的措辞使得 volatile 和监视器的规则仅适用于可由多个线程访问的规则。 如果编译器可以用某种方式（通常要花费很大的精力）证明一个锁仅对单个线程可访问，那么该锁可能会被消除。 类似地，可证明仅对单个线程可访问的 volaitle 字段可以当成普通字段。 更细粒度的分析和优化也是可能的，例如，那些依赖于仅在特定时间间隔内对多线程可证明不可访问的分析和优化。</p>
+<p>Blank cells in the table mean that the reordering is allowed if the accesses aren’t otherwise dependent with respect to basic Java semantics (as specified in the <a target="_blank" rel="noopener" href="http://www.javasoft.com/doc/language_specification/index.html">JLS</a>). For example even though the table doesn’t say so, you can’t reorder a load with a subsequent store to the same location. But you can reorder a load and store to two distinct locations, and may wish to do so in the course of various compiler transformations and optimizations. This includes cases that aren’t usually thought of as reorderings; for example reusing a computed value based on a loaded field rather than reloading and recomputing the value acts as a reordering. However, the JMM spec permits transformations that eliminate avoidable dependencies, and in turn allow reorderings.</p>
+<p>表中的空白单元格表示，重排序是允许的，如果那些访问不依赖于基本的 Java 语义(如 <a target="_blank" rel="noopener" href="http://www.javasoft.com/doc/language_specification/index.html">JLS</a> 所规范的)。 例如，即使表中没有这样说，你也不能将一个加载与一个后续对同一位置的存储重排序。 但是你可以将对两个不同位置的加载和存储重排序，并且可能希望在各种编译器转换和优化过程中这样做。 这包括通常不认为是重排序的情况； 例如，重用基于一个加载的字段得到的一个计算值，而不是重新加载并重新计算该值(与重排序行为一致)。 但是，JMM 规范允许进行转换，从而消除了可避免的依赖关系，进而允许重排序。</p>
+<p>In all cases, permitted reorderings must maintain minimal Java safety properties even when accesses are incorrectly synchronized by programmers: All observed field values must be either the default zero/null “pre-construction” values, or those written by some thread. This usually entails zeroing all heap memory holding objects before it is used in constructors and never reordering other loads with the zeroing stores. A good way to do this is to zero out reclaimed memory within the garbage collector. See the JSR-133 spec for rules dealing with other corner cases surrounding safety guarantees.</p>
+<p>在所有情况下，允许的重排序必须保持最小的 Java 安全属性，即使当那些访问被程序员不正确地同步的时候： 所有观察到的字段值都必须是默认的 zero/null “pre-construction”值，或者是由某个线程写入的值。 这通常需要在构造函数使用堆内存之前将持有对象的所有堆内存清零，还需要永远不会将零存储(zeroing stores)与其他存储重排序。 实现上述要求的一个好方法是将垃圾回收器中回收的内存清零。 处理围绕安全保证的其他特殊情况的相关规则，请参见 JSR-133 规范。</p>
+<p>The rules and properties described here are for accesses to Java-level fields. In practice, these will additionally interact with accesses to internal bookkeeping fields and data, for example object headers, GC tables, and dynamically generated code.</p>
+<p>此处描述的规则和属性用于访问 Java-level 的字段。 实际上，它们还将与对内部记录字段和数据（例如对象头，GC表和动态生成的代码）的访问进行交互。</p>
+<h3 id="Final-Fields-final字段"><a href="#Final-Fields-final字段" class="headerlink" title="Final Fields (final字段)"></a>Final Fields (final字段)</h3><p>Loads and Stores of final fields act as “normal” accesses with respect to locks and volatiles, but impose two additional reordering rules:</p>
+<p>final字段的加载和存储就锁和volatile而言是“普通”访问，但是强加了两个附加的重排序规则：</p>
+<ol>
+<li><p>A store of a final field (inside a constructor) and, if the field is a reference, any store that this final can reference, cannot be reordered with a subsequent store (outside that constructor) of the reference to the object holding that field into a variable accessible to other threads. For example, you cannot reorder<br>x.finalField = v; … ; sharedRef = x;<br>This comes into play for example when inlining constructors, where “…” spans the logical end of the constructor. You cannot move stores of finals within constructors down below a store outside of the constructor that might make the object visible to other threads. (As seen below, this may also require issuing a barrier). Similarly, you cannot reorder either of the first two with the third assignment in:<br>   v.afield = 1; x.finalField = v; … ; sharedRef = x;</p>
+</li>
+<li><p>The initial load (i.e., the very first encounter by a thread) of a final field cannot be reordered with the initial load of the reference to the object containing the final field. This comes into play in:<br>   x = sharedRef; … ; i = x.finalField;<br>A compiler would never reorder these since they are dependent, but there can be consequences of this rule on some processors.</p>
+</li>
+<li><p>一个构造函数内部的 final 字段存储，并且如果该 final 字段是一个引用，则此 final 字段可以引用的任何存储都不能与对该对象（该对象将final字段保存到其他线程可访问的变量中）的引用的后续存储重排序。例如，你不能重排序<br>   x.finalField = v; … ; sharedRef = x;<br>这会起作用，例如当内联构造函数时，其中 “…” 跨越构造函数的逻辑端。 你不能将构造函数中的 finals 存储向下移动到构造函数之外的存储，该构造函数之外的存储可能会使该对象对其他线程可见 （如下所示，这可能还需要调用一个屏障指令）。 同样，你不能在以下语句中将前两个中的任一个赋值与第三个重排序：<br>   v.afield = 1; x.finalField = v; … ; sharedRef = x;</p>
+</li>
+<li><p>final字段的初始加载（即线程最先遇到的加载）不能与对包含final字段的对象的引用的初始加载重排序。 这在以下语句起作用：<br>   x = sharedRef; … ; i = x.finalField;<br>编译器永远不会对它们进行排序，因为它们是依赖的，但是此规则可能会对某些处理器造成影响。</p>
+</li>
+</ol>
+<p>These rules imply that reliable use of final fields by Java programmers requires that the load of a shared reference to an object with a final field itself be synchronized, volatile, or final, or derived from such a load, thus ultimately ordering the initializing stores in constructors with subsequent uses outside constructors.</p>
+<p>这些规则暗示: Java 程序员对 final 字段的可靠使用存在要求， 该要求是对带有 final 字段的对象的共享引用的加载本身必须是 synchronized，volatile 或 final，或者是从此类加载派生来的， 因而最终将构造函数中的初始化存储与构造函数外的后续使用排序。</p>
+<h2 id="Memory-Barriers-内存屏障"><a href="#Memory-Barriers-内存屏障" class="headerlink" title="Memory Barriers (内存屏障)"></a>Memory Barriers (内存屏障)</h2><p>Compilers and processors must both obey reordering rules. No particular effort is required to ensure that uniprocessors maintain proper ordering, since they all guarantee “as-if-sequential” consistency. But on multiprocessors, guaranteeing conformance often requires emitting barrier instructions. Even if a compiler optimizes away a field access (for example because a loaded value is not used), barriers must still be generated as if the access were still present. (Although see below about independently optimizing away barriers.)</p>
+<p>编译器和处理器都必须遵守重排序规则。 不需要特别的努力来确保单处理器保持适当的排序，因为它们都保证 “as-if-sequential” 一致性。 但是在多处理器上，要保证一致性，通常需要调用屏障指令。 即使编译器优化掉了一个字段访问（例如，因为一个加载的值未被使用），屏障也必须仍然被生成，就像访问仍然存在一样。 （但是可参阅下面有关独立地优化掉屏障的信息。）</p>
+<p>Memory barriers are only indirectly related to higher-level notions described in memory models such as “acquire” and “release”. And memory barriers are not themselves “synchronization barriers”. And memory barriers are unrelated to the kinds of “write barriers” used in some garbage collectors. Memory barrier instructions directly control only the interaction of a CPU with its cache, with its write-buffer that holds stores waiting to be flushed to memory, and/or its buffer of waiting loads or speculatively executed instructions. These effects may lead to further interaction among caches, main memory and other processors. But there is nothing in the JMM that mandates any particular form of communication across processors so long as stores eventually become globally performed; i.e., visible across all processors, and that loads retrieve them when they are visible.</p>
+<p>内存屏障仅与内存模型中描述的更高级概念（例如 “acquire” 和 “release”）间接相关。 并且内存屏障本身并不是”同步屏障”(“synchronization barriers”)。 并且内存屏障与某些垃圾收集器中使用的”写屏障”(“write barriers”)的种类无关。 内存屏障指令仅直接控制 CPU 与该 CPU 的高速缓存，该 CPU的的写入缓冲区（保存等待刷新到主存的存储），和/或该 CPU 的等待加载的缓冲区或推测执行的指令的交互。 这些影响可能导致多个高速缓存，主存和其他多个处理器之间的进一步交互。 但是，只要存储最终在全局执行，JMM 中就没有什么要求在处理器之间进行任何特定形式的通信; 即在所有处理器上均可见，并且在可见时加载会获取它们。</p>
+<h3 id="Categories-目录"><a href="#Categories-目录" class="headerlink" title="Categories (目录)"></a>Categories (目录)</h3><p>Nearly all processors support at least a coarse-grained barrier instruction, often just called a <font color=#FF0000 >Fence</font>, that guarantees that all loads and stores initiated before the fence will be strictly ordered before any load or store initiated after the fence. This is usually among the most time-consuming instructions on any given processor (often nearly as, or even more expensive than atomic instructions). Most processors additionally support more fine-grained barriers.</p>
+<p>几乎所有处理器都至少支持一个粗粒度的屏障指令，通常称为一个<font color=#FF0000 >栅栏</font>(Fence)， 该栅栏可确保在该栅栏之前的所有加载和存储都会被严格排序在在该栅栏之后的任何加载或存储之前。 这通常是在任何给定处理器上最耗时的指令之一（通常与原子指令几乎一样，甚至比原子指令更昂贵）。 大多数处理器还支持更多细粒度的屏障</p>
+<p>A property of memory barriers that takes some getting used to is that they apply <em>BETWEEN</em> memory accesses. Despite the names given for barrier instructions on some processors, the right/best barrier to use depends on the kinds of accesses it separates. Here’s a common categorization of barrier types that maps pretty well to specific instructions (sometimes no-ops) on existing processors:</p>
+<p>内存屏障的一项属性(该属性需要一些时间来习惯)，它们会应用在内存访问<em>之间</em>。 尽管在某些处理器上为屏障指令指定了名称，但要使用的正确/最佳的屏障取决于它分隔的访问类型。 下面是屏障类型的一个常见分类，该分类可以很好地映射到现有处理器上的特定指令（有时是 no-ops）：</p>
+<p><font color=#FF0000 >LoadLoad</font> Barriers<br>The sequence: Load1; <font color=#FF0000 >LoadLoad</font>; Load2<br>ensures that Load1’s data are loaded before data accessed by Load2 and all subsequent load instructions are loaded. In general, explicit <font color=#FF0000 >LoadLoad</font> barriers are needed on processors that perform speculative loads and/or out-of-order processing in which waiting load instructions can bypass waiting stores. On processors that guarantee to always preserve load ordering, the barriers amount to no-ops.<br>序列: Load1; <font color=#FF0000 >LoadLoad</font>; Load2<br>确保在加载由 Load2 和所有后续加载指令访问的数据之前，先加载 Load1 的数据。 通常，显式的 <font color=#FF0000 >LoadLoad</font> 屏障在这样的处理器上被需要，该处理器执行推测性加载和/或乱序处理（其中等待中的加载指令可以绕过等待中的存储）。 在保证始终保持加载排序的处理器上，屏障等于no-ops。</p>
+<p><font color=#FF0000 >StoreStore</font> Barriers<br>The sequence: Store1; <font color=#FF0000 >StoreStore</font>; Store2<br>ensures that Store1’s data are visible to other processors (i.e., flushed to memory) before the data associated with Store2 and all subsequent store instructions. In general, <font color=#FF0000 >StoreStore</font> barriers are needed on processors that do not otherwise guarantee strict ordering of flushes from write buffers and/or caches to other processors or main memory.<br>序列: Store1; <font color=#FF0000 >StoreStore</font>; Store2<br>确保在与 Store2 和所有后续存储指令关联的数据之前，Store1 的数据对其他处理器可见（即已刷新到内存）。 通常，<font color=#FF0000 >StoreStore</font> 屏障在这样的处理器上被需要，该处理器否则不能保证从写缓冲区和/或高速缓存到其他处理器或主存储器的刷新严格排序。</p>
+<p><font color=#FF0000 >LoadStore</font> Barriers<br>The sequence: Load1; <font color=#FF0000 >LoadStore</font>; Store2<br>ensures that Load1’s data are loaded before all data associated with Store2 and subsequent store instructions are flushed. <font color=#FF0000 >LoadStore</font> barriers are needed only on those out-of-order procesors in which waiting store instructions can bypass loads.<br>序列: Load1; <font color=#FF0000 >LoadStore</font>; Store2<br>确保在与 Store2 和后续存储指令相关的所有数据被刷新之前，Load1 的数据先被加载。 仅在那些等待中的存储指令可以绕过加载的乱序处理器上才需要 <font color=#FF0000 >LoadStore</font> 屏障</p>
+<p><font color=#FF0000 >StoreLoad</font> Barriers<br>The sequence: Store1; <font color=#FF0000 >StoreLoad</font>; Load2<br>ensures that Store1’s data are made visible to other processors (i.e., flushed to main memory) before data accessed by Load2 and all subsequent load instructions are loaded. <font color=#FF0000 >StoreLoad</font> barriers protect against a subsequent load incorrectly using Store1’s data value rather than that from a more recent store to the same location performed by a different processor. Because of this, on the processors discussed below, a <font color=#FF0000 >StoreLoad</font> is strictly necessary only for separating stores from subsequent loads of the same location(s) as were stored before the barrier. <font color=#FF0000 >StoreLoad</font> barriers are needed on nearly all recent multiprocessors, and are usually the most expensive kind. Part of the reason they are expensive is that they must disable mechanisms that ordinarily bypass cache to satisfy loads from write-buffers. This might be implemented by letting the buffer fully flush, among other possible stalls.<br>序列: Store1; <font color=#FF0000 >StoreLoad</font>; Load2<br>确保在加载 Load2 和所有后续加载指令所访问的数据之前，使 Store1 的数据对其他处理器可见（即已刷新到主存储器）。 <font color=#FF0000 >StoreLoad</font> 屏障可以防止一个后续加载错误地使用 Store1 的数据值，而不是使用由不同处理器执行的对相同位置的更新的存储。 因此，在下面讨论的处理器上，只有为了将存储与该屏障之后访问同一位置的后续加载分开时，一个 <font color=#FF0000 >StoreLoad</font> 才严格需要。 <font color=#FF0000 >StoreLoad</font> 屏障在几乎所有最新的多处理器中都是必需的，并且通常是最昂贵的屏障。 它们之所以昂贵的部分原因是它们必须禁用通常绕过高速缓存的机制来满足来自写缓冲区的加载。 这可以通过让缓冲区完全刷新以及其他可能的停顿来实现。</p>
+<p>On all processors discussed below, it turns out that instructions that perform <font color=#FF0000 >StoreLoad</font> also obtain the other three barrier effects, so <font color=#FF0000 >StoreLoad</font> can serve as a general-purpose (but usually expensive) <font color=#FF0000 >Fence</font>. (This is an empirical fact, not a necessity.) The opposite doesn’t hold though. It is <em>NOT</em> usually the case that issuing any combination of other barriers gives the equivalent of a <font color=#FF0000 >StoreLoad</font>.</p>
+<p>在下面讨论的所有处理器上，事实证明执行 <font color=#FF0000 >StoreLoad</font> 的指令也获得了其他三种屏障效果， 因此 <font color=#FF0000 >StoreLoad</font> 可用作通用(但通常很贵)的 <font color=#FF0000 >Fence</font>。 (这是一个经验事实，不是必须的。) 相反情况并不成立。 调用其他屏障的任意组合相当于 <font color=#FF0000 >StoreLoad</font>， 通常 <em>不</em> 是这种情况。</p>
+<p>The following table shows how these barriers correspond to JSR-133 ordering rules.</p>
+<p>下表显示了这些屏障如何与 JSR-133 排序规则相对应。<br><img src="https://img-blog.csdnimg.cn/2020091415113790.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70#pic_center" alt="在这里插入图片描述"></p>
+<p>Plus the special final-field rule requiring a <font color=#FF0000 >StoreStore</font> barrier in<br>      x.finalField = v; <font color=#FF0000 >StoreStore</font> ; sharedRef = x;</p>
+<p>Here’s an example showing placements.</p>
+<p>加上特殊的final字段规则，该规则要求在下面语句中需要一个 <font color=#FF0000 >StoreStore</font> 屏障<br>      x.finalField = v; <font color=#FF0000 >StoreStore</font> ; sharedRef = x;</p>
+<p>下面是显示展示位置的示例。<br><img src="https://img-blog.csdnimg.cn/20200914151307978.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70#pic_center" alt="在这里插入图片描述"></p>
+<h3 id="Data-Dependency-and-Barriers-数据依赖性和屏障"><a href="#Data-Dependency-and-Barriers-数据依赖性和屏障" class="headerlink" title="Data Dependency and Barriers (数据依赖性和屏障)"></a>Data Dependency and Barriers (数据依赖性和屏障)</h3><p>The need for <font color=#FF0000 >LoadLoad</font> and <font color=#FF0000 >LoadStore</font> barriers on some processors interacts with their ordering guarantees for dependent instructions. On some (most) processors, a load or store that is dependent on the value of a previous load are ordered by the processor without need for an explicit barrier. This commonly arises in two kinds of cases, indirection:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Load x; Load x.field</span><br></pre></td></tr></table></figure>
+<p>and control</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Load x; <span class="keyword">if</span> (predicate(x)) Load or Store y;</span><br></pre></td></tr></table></figure>
+
+<p>一些处理器上对 <font color=#FF0000 >LoadLoad</font> 和 <font color=#FF0000 >LoadStore</font> 屏障的需求与其对相关指令的排序保证相互影响。 在某些（大多数）处理器上，一个加载或存储（该操作依赖于之前加载的值）被处理器排序时并不需要一个显式的屏障。 这通常在两种情况下出现， 间接：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Load x; Load x.field</span><br></pre></td></tr></table></figure>
+
+<p>和控制:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Load x; <span class="keyword">if</span> (predicate(x)) Load or Store y;</span><br></pre></td></tr></table></figure>
+
+<p>Processors that do <em>NOT</em> respect indirection ordering in particular require barriers for final field access for references initially obtained through shared references:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">x = sharedRef; ... ; LoadLoad; i = x.finalField;</span><br></pre></td></tr></table></figure>
+
+<p><em>不</em> 考虑间接排序的处理器尤其需要对引用(该引用最初通过共享引用获得)进行 final 字段访问的屏障：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">x = sharedRef; ... ; LoadLoad; i = x.finalField;</span><br></pre></td></tr></table></figure>
+
+<p>Conversely, as discussed below, processors that DO respect data dependencies provide several opportunities to optimize away <font color=#FF0000 >LoadLoad</font> and <font color=#FF0000 >LoadStore</font> barrier instructions that would otherwise need to be issued. (However, dependency does NOT automatically remove the need for <font color=#FF0000 >StoreLoad</font> barriers on any processor.)</p>
+<p>相反，如下所述，要尊重数据依赖性的处理器为优化掉 <font color=#FF0000 >LoadLoad</font> 和 <font color=#FF0000 >LoadStore</font> 屏障指令（否则这些指令需要被调用)提供了几个机会。 （但是，依赖关系不会自动消除任何处理器上对 <font color=#FF0000 >StoreLoad</font> 屏障的需求。）</p>
+<h3 id="Interactions-with-Atomic-Instructions-与原子指令的交互"><a href="#Interactions-with-Atomic-Instructions-与原子指令的交互" class="headerlink" title="Interactions with Atomic Instructions (与原子指令的交互)"></a>Interactions with Atomic Instructions (与原子指令的交互)</h3><p>The kinds of barriers needed on different processors further interact with implementation of MonitorEnter and MonitorExit. Locking and/or unlocking usually entail the use of atomic conditional update operations CompareAndSwap (CAS) or LoadLinked/StoreConditional (LL/SC) that have the semantics of performing a volatile load followed by a volatile store. While CAS or LL/SC minimally suffice, some processors also support other atomic instructions (for example, an unconditional exchange) that can sometimes be used instead of or in conjunction with atomic conditional updates.</p>
+<p>在不同处理器上需要的各种屏障进一步与 MonitorEnter 和 MonitorExit 的实现交互。 锁定和/或解锁通常需要使用原子条件更新操作 CompareAndSwap(CAS) 或 LoadLinked/StoreConditional(LL/SC)，这些操作具有一个 volatile 加载，然后跟着一个 volatile 存储的语义。 尽管 CAS或 LL/SC 最低限度地满足了使用，但某些处理器还支持其他原子指令（例如，无条件交换），这些指令有时可以用来代替原子条件更新或与原子条件更新结合使用。</p>
+<p>On all processors, atomic operations protect against read-after-write problems for the locations being read/updated. (Otherwise standard loop-until-success constructions wouldn’t work in the desired way.) But processors differ in whether atomic instructions provide more general barrier properties than the implicit <font color=#FF0000 >StoreLoad</font> for their target locations. On some processors these instructions also intrinsically perform barriers that would otherwise be needed for MonitorEnter/Exit; on others some or all of these barriers must be specifically issued.</p>
+<p>在所有处理器上，原子操作可以防止正在被读取/更新的位置的 read-after-write 问题。 (否则，标准的 loop-until-success 结构无法按预期的方式工作。) 但是处理器的区别在于原子指令是否为其目标地址提供比隐式 <font color=#FF0000 >StoreLoad</font> 更通用的屏障属性。 在某些处理器上，这些指令还从根本上执行了 MonitorEnter/Exit 所需的屏障。 在其他处理器上，所有或部分这些屏障必须明确调用。</p>
+<p>Volatiles and Monitors have to be separated to disentangle these effects, giving:</p>
+<p>volatile 和监视器必须分开才能消除这些影响，从而得到：<br><img src="https://img-blog.csdnimg.cn/20200914151827498.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70#pic_center" alt="在这里插入图片描述"></p>
+<p>Plus the special final-field rule requiring a <font color=#FF0000 >StoreStore</font> barrier in:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">x.finalField = v; StoreStore; sharedRef = x;</span><br></pre></td></tr></table></figure>
+
+<p>加上特殊的 final 字段规则，该规则要求在以下位置添加 <font color=#FF0000 >StoreStore</font> 屏障：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">x.finalField = v; StoreStore; sharedRef = x;</span><br></pre></td></tr></table></figure>
+
+<p>In this table, “Enter” is the same as “Load” and “Exit” is the same as “Store”, unless overridden by the use and nature of atomic instructions. In particular:</p>
+<p>在此表中， “Enter” 与 “Load” 相同，”Exit” 与 “Store” 相同，除非被原子指令的使用和性质所覆盖。 特别是：</p>
+<ul>
+<li><p><font color=#FF0000 >EnterLoad</font> is needed on entry to any synchronized block/method that performs a load. It is the same as <font color=#FF0000 >LoadLoad</font> unless an atomic instruction is used in MonitorEnter and itself provides a barrier with at least the properties of <font color=#FF0000 >LoadLoad</font>, in which case it is a no-op.</p>
+</li>
+<li><p><font color=#FF0000 >EnterLoad</font> 在进入任何执行加载的同步块/方法时被需要。 EnterLoad 与 <font color=#FF0000 >LoadLoad</font> 相同， 除非在 MonitorEnter 中使用了原子指令，并且 EnterLoad 本身提供了至少具有 <font color=#FF0000 >LoadLoad</font> 属性的屏障， 在这种情况下，它是一个 no-op。</p>
+</li>
+<li><p><font color=#FF0000 >StoreExit</font> is needed on exit of any synchronized block/method that performs a store. It is the same as <font color=#FF0000 >StoreStore</font> unless an atomic instruction is used in MonitorExit and itself provides a barrier with at least the properties of <font color=#FF0000 >StoreStore</font>, in which case it is a no-op.</p>
+</li>
+<li><p><font color=#FF0000 >StoreExit</font> 在退出任何执行存储的同步块/方法时被需要。 StoreExit 与 <font color=#FF0000 >StoreStore</font> 相同， 除非在 MonitorExit 中使用了原子指令，并且 StoreExit 本身提供了至少具有 <font color=#FF0000 >StoreStore</font> 属性的屏障， 在这种情况下，它是一个 no-op。</p>
+</li>
+<li><p><font color=#FF0000 >ExitEnter</font> is the same as <font color=#FF0000 >StoreLoad</font> unless atomic instructions are used in MonitorExit and/or MonitorEnter and at least one of these provide a barrier with at least the properties of <font color=#FF0000 >StoreLoad</font>, in which case it is a no-op.</p>
+</li>
+<li><p><font color=#FF0000 >ExitEnter</font> 与 <font color=#FF0000 >StoreLoad</font> 相同，除非在 MonitorExit 和/或 MonitorEnter 中使用了原子指令，并且其中至少有一个提供了至少具有 <font color=#FF0000 >StoreLoad</font> 属性的屏障，在这种情况下，它是一个 no-op。</p>
+</li>
+</ul>
+<p>The other types are specializations that are unlikely to play a role in compilation (see below) and/or reduce to no-ops on current processors. For example, <font color=#FF0000 >EnterEnter</font> is needed to separate nested MonitorEnters when there are no intervening loads or stores. Here’s an example showing placements of most types:</p>
+<p>其他类型是专门化，它们不太可能在编译中起作用（请参阅下文）和/或在当前处理器上简化为 no-ops。 例如，当没有中间加载或存储时，需要 <font color=#FF0000 >EnterEnter</font> 来分隔嵌套的 MonitorEnters。 下面是一个显示大多数类型位置的示例：<br><img src="https://img-blog.csdnimg.cn/20200914152607293.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70#pic_center" alt="在这里插入图片描述"></p>
+<p>Java-level access to atomic conditional update operations will be available in JDK1.5 via <a target="_blank" rel="noopener" href="http://gee.cs.oswego.edu/dl/concurrency-interest/">JSR-166 (concurrency utilities)</a> so compilers will need to issue associated code, using a variant of the above table that collapses MonitorEnter and MonitorExit – semantically, and sometimes in practice, these Java-level atomic updates act as if they are surrounded by locks.</p>
+<p>在 Java1.5 中 通过 <a target="_blank" rel="noopener" href="http://gee.cs.oswego.edu/dl/concurrency-interest/">JSR-166 (concurrency utilities) </a>对原子条件更新操作进行 Java-level 访问将是可用的， 因此编译器将需要使用上表的变体来调用关联的代码，该变体将 MonitorEnter 和 MonitorExit 折叠起来 —— 从语义上讲，有时在实践中，这些 Java-level 原子更新的行为就像被锁包围一样。</p>
+<h2 id="Multiprocessors-多处理器"><a href="#Multiprocessors-多处理器" class="headerlink" title="Multiprocessors (多处理器)"></a>Multiprocessors (多处理器)</h2><p>Here’s a listing of processors that are commonly used in MPs, along with links to documents providing information about them. (Some require some clicking around from the linked site and/or free registration to access manuals). This isn’t an exhaustive list, but it includes processors used in all current and near-future multiprocessor Java implementations I know of. The list and the properties of processors decribed below are not definitive. In some cases I’m just reporting what I read, and could have misread. Several reference manuals are not very clear about some properties relevant to the JMM. Please help make it definitive.</p>
+<p>下面是 MPs 中常用处理器的列表，以及提供有关它们的信息的文档的链接。 （有些需要在链接的站点上单击一下和/或免费注册才能访问手册）。 这并不是一个详尽的清单，但它包括了在我所知道的所有当前和不久将来的多处理器 Java 实现中使用的处理器。 下面描述的处理器的列表和属性不是明确的。 在某些情况下，我只是在报告自己所读的内容，并且可能会误读。 一些参考手册对于与 JMM 相关的某些属性不是很清楚。请帮助使其明确。</p>
+<p>Good sources of hardware-specific information about barriers and related properties of machines not listed here are <a target="_blank" rel="noopener" href="http://www.hpl.hp.com/research/linux/atomic_ops/">Hans Boehm’s atomic_ops library,</a> the <a target="_blank" rel="noopener" href="http://kernel.org/">Linux Kernel Source</a>, and <a target="_blank" rel="noopener" href="http://lse.sourceforge.net/">Linux Scalability Effort</a>. Barriers needed in the linux kernel correspond in straightforward ways to those discussed here, and have been ported to most processors. For descriptions of the underlying models supported on different processors, see <a target="_blank" rel="noopener" href="http://rsim.cs.uiuc.edu/~sadve/">Sarita Adve et al, Recent Advances in Memory Consistency Models for Hardware Shared-Memory Systems</a> and <a target="_blank" rel="noopener" href="http://sadve.cs.illinois.edu/">Sarita Adve and Kourosh Gharachorloo, Shared Memory Consistency Models: A Tutorial</a>.</p>
+<p>此处未列出的有关机器的屏障和相关属性的特定硬件信息的良好来源是 <a target="_blank" rel="noopener" href="http://www.hpl.hp.com/research/linux/atomic_ops/">Hans Boehm’s atomic_ops library</a>，<a target="_blank" rel="noopener" href="http://kernel.org/">Linux Kernel Source</a> 和 <a target="_blank" rel="noopener" href="http://lse.sourceforge.net/">Linux Scalability Effort</a>。 linux 内核中所需的屏障以直接的方式对应于此处讨论的屏障，并且已移植到大多数处理器中。 有关不同处理器支持的基础模型的说明，请参见 <a target="_blank" rel="noopener" href="http://rsim.cs.uiuc.edu/~sadve/">Sarita Adve et al, Recent Advances in Memory Consistency Models for Hardware Shared-Memory Systems</a> 和 <a target="_blank" rel="noopener" href="http://sadve.cs.illinois.edu/">Sarita Adve and Kourosh Gharachorloo, Shared Memory Consistency Models: A Tutorial</a>。</p>
+<ul>
+<li>sparc-TSO<br>Ultrasparc 1, 2, 3 (sparcv9) in TSO (Total Store Order) mode. Ultra3s only support TSO mode. (RMO mode in Ultra1/2 is never used so can be ignored.) See <a target="_blank" rel="noopener" href="http://www.sun.com/processors/manuals/index.html">UltraSPARC III Cu User’s Manual</a> and <a target="_blank" rel="noopener" href="http://www.sparc.com/resource.htm">The SPARC Architecture Manual, Version 9</a> .</li>
+<li>x86 (and x64)<br>Intel 486+, as well as AMD and apparently others. There was a flurry of re-specs in 2005-2009, but the current specs are nearly identical to TSO, differing mainly only in supporting different cache modes, and dealing with corner cases such as unaligned accesses and special forms of instructions. See <a target="_blank" rel="noopener" href="http://www.intel.com/products/processor/manuals/">The IA-32 Intel Architecture Software Developers Manuals: System Programming Guide</a> and <a target="_blank" rel="noopener" href="http://www.amd.com/us-en/Processors/DevelopWithAMD/0,,30_2252_875_7044,00.html">AMD Architecture Programmer’s Manual Programming</a>.</li>
+<li>ia64<br>Itanium. See <a target="_blank" rel="noopener" href="http://developer.intel.com/design/itanium/manuals/iiasdmanual.htm">Intel Itanium Architecture Software Developer’s Manual, Volume 2: System Architecture</a></li>
+<li>ppc (POWER)<br>All versions have the same basic memory model, but the names and definition of some memory barrier instructions changed over time. The listed versions have been current since Power4; see architecture manuals for details. See <a target="_blank" rel="noopener" href="http://www.motorola.com/PowerPC/">MPC603e RISC Microprocessor Users Manual</a>, <a target="_blank" rel="noopener" href="http://www.motorola.com/PowerPC/">MPC7410/MPC7400 RISC Microprocessor Users Manual</a> , <a target="_blank" rel="noopener" href="http://www-106.ibm.com/developerworks/eserver/articles/archguide.html">Book II of PowerPC Architecture Book</a>, <a target="_blank" rel="noopener" href="http://www-3.ibm.com/chips/techlib/techlib.nsf/techdocs/F6153E213FDD912E87256D49006C6541">PowerPC Microprocessor Family: Software reference manual</a>, <a target="_blank" rel="noopener" href="http://www-3.ibm.com/chips/techlib/techlib.nsf/techdocs/852569B20050FF778525699600682CC7">Book E- Enhanced PowerPC Architecture</a>, <a target="_blank" rel="noopener" href="http://e-www.motorola.com/webapp/sps/site/overview.jsp?nodeId=03M943030450467M0ys3k3KQ">EREF: A Reference for Motorola Book E and the e500 Core</a>. For discussion of barriers see <a target="_blank" rel="noopener" href="http://www-1.ibm.com/servers/esdd/articles/power4_mem.html">IBM article on power4 barriers</a>, and <a target="_blank" rel="noopener" href="http://www-106.ibm.com/developerworks/eserver/articles/powerpc.html">IBM article on powerpc barriers</a>.</li>
+<li>arm<br>Version 7+. See <a target="_blank" rel="noopener" href="http://infocenter.arm.com/help/index.jsp">ARM processor specifications</a></li>
+<li>alpha<br>21264x and I think all others. See <a target="_blank" rel="noopener" href="http://www.alphalinux.org/docs/alphaahb.html">Alpha Architecture Handbook</a></li>
+<li>pa-risc<br>HP pa-risc implementations. See the <a target="_blank" rel="noopener" href="http://h21007.www2.hp.com/dspp/tech/tech_TechDocumentDetailPage_IDX/1,1701,2533,00.html">pa-risc 2.0 Architecture</a> manual.</li>
+</ul>
+<p>Here’s how these processors support barriers and atomics:</p>
+<p>以下是这些处理器如何支持屏障和原子的：<br><img src="https://img-blog.csdnimg.cn/20200914153542631.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70#pic_center" alt="在这里插入图片描述"></p>
+<h3 id="Notes-备注"><a href="#Notes-备注" class="headerlink" title="Notes (备注)"></a>Notes (备注)</h3><ul>
+<li><p>Some of the listed barrier instructions have stronger properties than actually needed in the indicated cells, but seem to be the cheapest way to get desired effects.</p>
+</li>
+<li><p>列出的一些屏障指令具有比所示单元格实际所需的属性更强的属性，但似乎是获得所需效果的最便宜方法。</p>
+</li>
+<li><p>The listed barrier instructions are those designed for use with normal program memory, but not necessarily other special forms/modes of caching and memory used for IO and system tasks. For example, on x86-SPO, <font color="#FF0000">StoreStore</font> barriers (“sfence”) are needed with WriteCombining (WC) caching mode, which is designed for use in system-level bulk transfers etc. OSes use Writeback mode for programs and data, which doesn’t require <font color="#FF0000">StoreStore</font> barriers.</p>
+</li>
+<li><p>列出的屏障指令是被设计用于普通程序存储器的指令，但不一定适合用于 IO 和系统任务的缓存和存储器的其他特殊形式/模式。 例如，在 x86-SPO 上，WriteCombining(WC) 缓存模式需要 <font color="#FF0000">StoreStore</font> 屏障（”sfence”），该屏障被设计用于 system-level 批量传输等。 将 Writeback 模式用于程序和数据的操作系统不需要 <font color="#FF0000">StoreStore</font> 屏障。</p>
+</li>
+<li><p>On x86, any lock-prefixed instruction can be used as a  <font color="#FF0000">StoreLoad</font> barrier. (The form used in linux kernels is the no-op lock; addl $0,0(%%esp).) Versions supporting the “SSE2” extensions (Pentium4 and later) support the mfence instruction which seems preferable unless a lock-prefixed instruction like CAS is needed anyway. The cpuid instruction also works but is slower.</p>
+</li>
+<li><p>在 x86 上，任何带 lock 前缀的指令都可以用作一个 <font color="#FF0000">StoreLoad</font> 屏障。 （在 Linux 内核中使用的形式是 no-op lock; addl $0,0(%%esp)。） 支持 “SSE2” 扩展的版本（Pentium4 和更高版本）支持 mfence 指令， 该指令似乎是更好的，除非无论如何都需要像 CAS 这样的带 lock 前缀的指令。 cpuid 指令也可以，但是速度较慢。</p>
+</li>
+<li><p>On ia64, <font color="#FF0000">LoadStore</font>, <font color="#FF0000">LoadLoad</font> and <font color="#FF0000">StoreStore</font> barriers are folded into special forms of load and store instructions – there aren’t separate instructions. ld.acq acts as (load; <font color="#FF0000">LoadLoad</font> +<font color="#FF0000">LoadStore</font>) and st.rel acts as (<font color="#FF0000">LoadStore</font>+<font color="#FF0000">StoreStore</font>; store). Neither of these provide a <font color="#FF0000">StoreLoad</font> barrier – you need a separate mf barrier instruction for that.</p>
+</li>
+<li><p>在 ia64 上，<font color="#FF0000">LoadStore</font>, <font color="#FF0000">LoadLoad</font> 和<font color="#FF0000">StoreStore</font> 屏障被折叠成特殊形式的装载和存储指令 —— 没有单独的指令。 ld.acq 充当（ (load; <font color="#FF0000">LoadLoad</font>+<font color="#FF0000">LoadStore</font>)，而 st.rel 充当(<font color="#FF0000">LoadStore</font>+<font color="#FF0000">StoreStore</font>; store)。 它们都不提供 <font color="#FF0000">StoreLoad</font> 屏障 —— 为此你需要单独的 mf 屏障指令。</p>
+</li>
+<li><p>On both ARM and ppc, there may be opportunities to replace load fences in the presence of data dependencies with non-fence-based instruction sequences. Sequences and cases in which they apply are described in work by the <a target="_blank" rel="noopener" href="http://www.cl.cam.ac.uk/~pes20/ppc-supplemental/">Cambridge Relaxed Memory Concurrency Group</a>.</p>
+</li>
+<li><p>在 ARM 和 ppc 上，如果存在数据依赖性，则可能有机会使用 non-fence-based 的指令序列来替换 load 栅栏。 <a target="_blank" rel="noopener" href="http://www.cl.cam.ac.uk/~pes20/ppc-supplemental/">Cambridge Relaxed Memory Concurrency Group</a> 在成果中描述了它们适用的序列和情况。</p>
+</li>
+<li><p>The sparc membar instruction supports all four barrier modes, as well as combinations of modes. But only the <font color="#FF0000">StoreLoad</font> mode is ever needed in TSO. On some UltraSparcs, any membar instruction produces the effects of a <font color="#FF0000">StoreLoad</font>, regardless of mode.</p>
+</li>
+<li><p>sparc membar 指令支持所有四种屏障模式以及模式组合。 但是在 TSO 中只需要 <font color="#FF0000">StoreLoad</font> 模式。 在某些 UltraSparcs 上，任何模式的任何 membar 指令都会产生 <font color="#FF0000">StoreLoad</font> 的效果。</p>
+</li>
+<li><p>The x86 processors supporting “streaming SIMD” SSE2 extensions require <font color="#FF0000">LoadLoad</font> “lfence” only only in connection with these streaming instructions.</p>
+</li>
+<li><p>支持 “streaming SIMD” SSE2扩展的 x86 处理器仅在与这些流式指令结合使用时才需要 <font color="#FF0000">LoadLoad</font> “lfence”。</p>
+</li>
+<li><p>Although the pa-risc specification does not mandate it, all HP pa-risc implementations are sequentially consistent, so have no memory barrier instructions.</p>
+</li>
+<li><p>尽管 pa-risc 规范没有强制要求，但所有 HP pa-risc 实现都是顺序一致的，因此没有内存屏障指令。</p>
+</li>
+<li><p>The only atomic primitive on pa-risc is ldcw, a form of test-and-set, from which you would need to build up atomic conditional updates using techniques such as those in the <a target="_blank" rel="noopener" href="http://h21007.www2.hp.com/hpux-devtools/CXX/hpux-devtools.0106/0014.html">HP white paper on spinlocks</a>.</p>
+</li>
+<li><p>pa-risc 上唯一的原子原语是 ldcw，它是一种 test-and-set 的形式，你将需要使用诸如 <a target="_blank" rel="noopener" href="http://h21007.www2.hp.com/hpux-devtools/CXX/hpux-devtools.0106/0014.html">HP white paper on spinlocks</a> 中的技术来实现原子条件更新。</p>
+</li>
+<li><p>CAS and LL/SC take multiple forms on different processors, differing only with respect to field width, minimially including 4 and 8 byte versions.</p>
+</li>
+<li><p>CAS 和 LL/SC 在不同的处理器上采用多种形式， 仅在字段宽度方面有所不同，至少包括 4 和 8 字节版本。</p>
+</li>
+<li><p>On sparc and x86, CAS has implicit preceding and trailing full <font color="#FF0000">StoreLoad</font> barriers. The sparcv9 architecture manual says CAS need not have post-<font color="#FF0000">StoreLoad</font> barrier property, but the chip manuals indicate that it does on ultrasparcs.</p>
+</li>
+<li><p>在 sparc 和 x86 上，CAS 具有隐式的前缀和后缀的完整 <font color="#FF0000">StoreLoad</font> 屏障。 sparcv9 体系结构手册说 CAS 不需要具有 post-<font color="#FF0000">StoreLoad</font> 屏障属性，但是芯片手册表明 StoreLoad 在 ultrasparcs 上存在。</p>
+</li>
+<li><p>On ppc and alpha, LL/SC have implicit barriers only with respect to the locations being loaded/stored, but don’t have more general barrier properties.</p>
+</li>
+<li><p>在 ppc 和 alpha 上，LL/SC 仅对于要加载/存储的位置具有隐式屏障，但没有更一般的屏障属性。</p>
+</li>
+<li><p>The ia64 cmpxchg instruction also has implicit barriers with respect to the locations being loaded/stored, but additionally takes an optional .acq (post-<font color="#FF0000">LoadLoad</font>+<font color="#FF0000">LoadStore</font>) or .rel (pre-<font color="#FF0000">StoreStore</font>+<font color="#FF0000">LoadStore</font>) modifier. The form cmpxchg.acq can be used for MonitorEnter, and cmpxchg.rel for MonitorExit. In those cases where exits and enters are not guaranteed to be matched, an <font color="#FF0000">ExitEnter</font> (<font color="#FF0000">StoreLoad</font>) barrier may also be needed.</p>
+</li>
+<li><p>ia64 cmpxchg 指令相对于要加载/存储的位置也具有隐式屏障，但是另外需要一个可选的 .acq (post-<font color="#FF0000">LoadLoad</font>+<font color="#FF0000">LoadStore</font>) 或 .rel (pre-<font color="#FF0000">StoreStore</font>+<font color="#FF0000">LoadStore</font>) 修饰符。 cmpxchg.acq 的格式可用于 MonitorEnter，而 cmpxchg.rel 的格式可用于 MonitorExit。 在无法保证退出和进入匹配的情况下，可能还需要一个 <font color="#FF0000">ExitEnter</font>(<font color="#FF0000">StoreLoad</font>) 屏障。</p>
+</li>
+<li><p>Sparc, x86 and ia64 support unconditional-exchange (swap, xchg). Sparc ldstub is a one-byte test-and-set. ia64 fetchadd returns previous value and adds to it. On x86, several instructions (for example add-to-memory) can be lock-prefixed, causing them to act atomically.</p>
+</li>
+<li><p>Sparc，x86 和 ia64 支持 nconditional-exchange (swap, xchg)。 Sparc ldstub 是一字节的 test-and-set。 ia64 fetchadd 返回先前的值并将其添加。 在 x86 上，多个指令（例如，add-to-memory）可以是 lock-prefixed 的，从而使其原子地执行。</p>
+</li>
+</ul>
+<h2 id="Recipes-食谱"><a href="#Recipes-食谱" class="headerlink" title="Recipes (食谱)"></a>Recipes (食谱)</h2><h3 id="Uniprocessors-单处理器"><a href="#Uniprocessors-单处理器" class="headerlink" title="Uniprocessors (单处理器)"></a>Uniprocessors (单处理器)</h3><p>If you are generating code that is guaranteed to only run on a uniprocessor, then you can probably skip the rest of this section. Because uniprocessors preserve apparent sequential consistency, you never need to issue barriers unless object memory is somehow shared with asynchrononously accessible IO memory. This might occur with specially mapped java.nio buffers, but probably only in ways that affect internal JVM support code, not Java code. Also, it is conceivable that some special barriers would be needed if context switching doesn’t entail sufficient synchronization.<br>如果你生成的代码只能在单处理器上运行，则可以跳过本节的其余部分。 因为单处理器保留了明显的顺序一致性，所以除非对象存储与异步访问的IO内存以某种方式共享，否则你无需调用屏障。 这可能发生在特殊映射的 java.nio 缓冲区中，但可能仅以影响内部 JVM 支持代码而不是 Java 代码的方式发生。 同样，可以想象，如果上下文切换没有足够的同步性，那么将需要一些特殊的屏障。</p>
+<h3 id="Inserting-Barriers-插入屏障"><a href="#Inserting-Barriers-插入屏障" class="headerlink" title="Inserting Barriers (插入屏障)"></a>Inserting Barriers (插入屏障)</h3><p>Barrier instructions apply between different kinds of accesses as they occur during execution of a program. Finding an “optimal” placement that minimizes the total number of executed barriers is all but impossible. Compilers often cannot tell if a given load or store will be preceded or followed by another that requires a barrier; for example, when a volatile store is followed by a return. The easiest conservative strategy is to assume that the kind of access requiring the “heaviest” kind of barrier will occur when generating code for any given load, store, lock, or unlock:<br>屏障指令适用于在程序执行期间发生的各种访问之间。 几乎不可能找到一个“最优的”布局，以使要执行的屏障的总数最少。 编译器通常无法确定给定的加载或存储是在需要屏障的加载或存储之前还是之后；例如，当一个 volatile 存储后面跟着一个 return 时。 最简单的保守策略是假设在为任何给定的加载，存储，锁定或解锁生成代码时，需要“最重”类型屏障的那种访问将会发生：</p>
+<ol>
+<li><p>Issue a <font color="#FF0000">StoreStore</font> barrier before each volatile store.<br>(On ia64 you must instead fold this and most barriers into corresponding load or store instructions.)<br>在每个 volatile 存储之前调用一个 <font color="#FF0000">StoreStore</font> 屏障<br>（在 ia64 上，你必须将此屏障和大多数屏障折叠成相应的加载或存储指令。)</p>
+</li>
+<li><p>Issue a <font color="#FF0000">StoreStore</font> barrier after all stores but before return from any constructor for any class with a final field.<br>在所有存储之后但在任何带有 final 字段的类的任何构造函数返回之前，调用一个 <font color="#FF0000">StoreStore</font> 屏障。</p>
+</li>
+<li><p>Issue a <font color="#FF0000">StoreLoad</font> barrier after each volatile store.<br>Note that you could instead issue one before each volatile load, but this would be slower for typical programs using volatiles in which reads greatly outnumber writes. Alternatively, if available, you can implement volatile store as an atomic instruction (for example XCHG on x86) and omit the barrier. This may be more efficient if atomic instructions are cheaper than <font color="#FF0000">StoreLoad</font> barriers.<br>在每个 volatile 存储之后调用一个 <font color="#FF0000">StoreLoad</font> 屏障<br>请注意，你可以改为在每个 volatile 加载之前调用一个，但是对于使用 volatile 的典型程序（其中读取次数大大超过写入次数），这会比较慢。 另外，如果可用，你可以将 volatile 存储实现为一个原子指令（例如 x86 上的 XCHG ）并省略该屏障。 如果原子指令比 <font color="#FF0000">StoreLoad</font> 屏障便宜，这可能会更有效。</p>
+</li>
+<li><p>Issue <font color="#FF0000">LoadLoad</font> and <font color="#FF0000">LoadStore</font> barriers after each volatile load.<br>On processors that preserve data dependent ordering, you need not issue a barrier if the next access instruction is dependent on the value of the load. In particular, you do not need a barrier after a load of a volatile reference if the subsequent instruction is a null-check or load of a field of that reference.<br>在每次 volatile 加载后调用 <font color="#FF0000">LoadLoad</font> 和 <font color="#FF0000">LoadStore</font> 屏障。<br>在保留数据依赖排序的处理器上，如果下一条访问指令取决于加载的值，则无需调用一个屏障。 特别是，如果后续指令是空检查或 volatile 引用字段的加载，则在加载该 volatile 引用之后不需要屏障。</p>
+</li>
+<li><p>Issue an <font color="#FF0000">ExitEnter</font> barrier either before each MonitorEnter or after each MonitorExit.<br>(As discussed above, <font color="#FF0000">ExitEnter</font> is a no-op if either MonitorExit or MonitorEnter uses an atomic instruction that supplies the equivalent of a <font color="#FF0000">StoreLoad</font> barrier. Similarly for others involving Enter and Exit in the remaining steps.)<br>在每个 MonitorEnter 之前或在每个 MonitorExit 之后，调用一个 <font color="#FF0000">ExitEnter</font> 屏障<br>（如上所述，如果 MonitorExit 或 MonitorEnter 使用的原子指令(该原子指令提供与 <font color="#FF0000">StoreLoad</font> 屏障同样的效果），则 <font color="#FF0000">ExitEnter</font> 是一个 no-op。 对于其余步骤中涉及 Enter 和 Exit 的其他屏障也是如此。)</p>
+</li>
+<li><p>Issue <font color="#FF0000">EnterLoad</font> and <font color="#FF0000">EnterStore</font> barriers after each MonitorEnter.<br>在每个 MonitorEnter 之后，调用 <font color="#FF0000">EnterLoad</font> 和 <font color="#FF0000">EnterStore</font> 屏障。</p>
+</li>
+<li><p>Issue <font color="#FF0000">StoreExit</font> and <font color="#FF0000">LoadExit</font> barriers before each MonitorExit.<br>在每个 MonitorExit 之前，调用 <font color="#FF0000">StoreExit</font> 和 <font color="#FF0000">LoadExit </font> 屏障。</p>
+</li>
+<li><p>If on a processor that does not intrinsically provide ordering on indirect loads, issue a <font color="#FF0000">LoadLoad</font> barrier before each load of a final field. (Some alternative strategies are discussed in this <a target="_blank" rel="noopener" href="http://www.cs.umd.edu/~pugh/java/memoryModel/archive/0180.html">JMM list posting</a>, and <a target="_blank" rel="noopener" href="http://lse.sourceforge.net/locking/wmbdd.html">this description of linux data dependent barriers</a>.)<br>如果在本质上不提供间接加载排序的处理器上，则在 final 字段的每次加载之前调用 <font color="#FF0000">LoadLoad</font> 屏障。 （<a target="_blank" rel="noopener" href="http://www.cs.umd.edu/~pugh/java/memoryModel/archive/0180.html">this JMM list posting</a> 和 <a target="_blank" rel="noopener" href="http://lse.sourceforge.net/locking/wmbdd.html">this description of linux data dependent barriers</a> 讨论了一些替代策略。）</p>
+</li>
+</ol>
+<p>Many of these barriers usually reduce to no-ops. In fact, most of them reduce to no-ops, but in different ways under different processors and locking schemes. For the simplest examples, basic conformance to JSR-133 on x86 or sparc-TSO using CAS for locking amounts only to placing a StoreLoad barrier after volatile stores.</p>
+<p>许多这些屏障通常简化为 no-ops。 实际上，它们大多数简化为 no-ops，但是在不同的处理器和锁定方案下以不同的方式进行。 对于最简单的示例，使用 CAS 锁定数量的 x86 或 sparc-TSO 上的 JSR-133 基本一致性仅用于在 volatile 存储之后放置一个 StoreLoad 屏障。</p>
+<h3 id="Removing-Barriers-消除屏障"><a href="#Removing-Barriers-消除屏障" class="headerlink" title="Removing Barriers (消除屏障)"></a>Removing Barriers (消除屏障)</h3><p>The conservative strategy above is likely to perform acceptably for many programs. The main performance issues surrounding volatiles occur for the <font color="#FF0000">StoreLoad</font> barriers associated with stores. These ought to be relatively rare – the main reason for using volatiles in concurrent programs is to avoid the need to use locks around reads, which is only an issue when reads greatly overwhelm writes. But this strategy can be improved in at least the following ways:</p>
+<p>上面的保守策略可能在许多程序中都能令人满意地执行。 围绕 volatiles 的主要性能问题会发生在与存储关联的 <font color="#FF0000">StoreLoad</font> 屏障。 这些应该相对较少 —— 在并发程序中使用 volatile 的主要原因是避免需要在读取周围使用锁，这仅在读取大大超过写入的情况下才是问题。 但是，至少可以通过以下方式改进此策略：</p>
+<ul>
+<li>Removing redundant barriers. The above tables indicate that barriers can be eliminated as follows:<br>消除多余的屏障。 上表表明可以按以下步骤消除屏障：<br><img src="https://img-blog.csdnimg.cn/2020091415594649.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70#pic_center" alt="在这里插入图片描述"><br>Similar eliminations can be used for interactions with locks, but depend on how locks are implemented. Doing all this in the presence of loops, calls, and branches is left as an exercise for the reader. :-)<br>类似的消除方法可用于与锁进行交互，但要取决于实现锁的方式。 在存在循环，调用和分支的情况下进行所有这些操作留给读者作为练习。 :-)</li>
+</ul>
+<ul>
+<li><p>Rearranging code (within the allowed constraints) to further enable removing <font color="#FF0000">LoadLoad</font> and <font color="#FF0000">LoadStore</font> barriers that are not needed because of data dependencies on processors that preserve such orderings.<br>重排列代码（在允许的约束范围内），以进一步启用除去不需要的 <font color="#FF0000">LoadLoad</font> 和 <font color="#FF0000">LoadStore</font> 屏障，由于保留此类排序的处理器上的数据依赖。</p>
+</li>
+<li><p>Moving the point in the instruction stream that the barriers are issued, to improve scheduling, so long as they still occur somewhere in the interval they are required.<br>只要在要求的间隔内仍出现障碍，就在指令流中移动调用屏障的点以改善调度。</p>
+</li>
+<li><p>Removing barriers that aren’t needed because there is no possibility that multiple threads could rely on them; for example volatiles that are provably visible only from a single thread. Also, removing some barriers when it can be proven that threads can only store or only load certain fields. All this usually requires a fair amount of analysis.<br>消除不必要的屏障，因为不可能有多个线程依赖它们； 例如，可证明仅从单个线程可见的 volatiles。 另外，在可证明线程只能存储或仅加载某些字段的情况下，消除一些障碍。 所有这些通常需要进行大量分析。</p>
+</li>
+</ul>
+<h3 id="Miscellany-杂记"><a href="#Miscellany-杂记" class="headerlink" title="Miscellany (杂记)"></a>Miscellany (杂记)</h3><p>JSR-133 also addresses a few other issues that may entail barriers in more specialized cases:<br>JSR-133 还解决了一些其他问题，这些问题在更特殊的情况下可能会带来屏障：</p>
+<ul>
+<li><p>Thread.start() requires barriers ensuring that the started thread sees all stores visible to the caller at the call point. Conversely, Thread.join() requires barriers ensuring that the caller sees all stores by the terminating thread. These are normally generated by the synchronization entailed in implementations of these constructs.<br>Thread.start() 要求设置屏障，以确保被启动的线程在调用点看到调用者可见的所有存储。 相反，Thread.join() 要求使用屏障，以确保调用者可以通过终止线程看到所有存储。 这些通常是由这些构造的实现中包含的同步生成的。</p>
+</li>
+<li><p>Static final initialization requires <font color="#FF0000">StoreStore</font> barriers that are normally entailed in mechanics needed to obey Java class loading and initialization rules.<br>静态 final 初始化需要 <font color="#FF0000">StoreStore</font> 屏障，该屏障通常在 需要遵循 Java 类加载和初始化规则的机制中被需要。</p>
+</li>
+<li><p>Ensuring default zero/null initial field values normally entails barriers, synchronization, and/or low-level cache control within garbage collectors.<br>确保默认的 zero/null 初始字段值通常需要在垃圾收集器中进行屏障，同步和/或进行低级缓存控制。</p>
+</li>
+<li><p>JVM-private routines that “magically” set System.in, System.out, and System.err outside of constructors or static initializers need special attention since they are special legacy exceptions to JMM rules for final fields.<br>JVM-private 例程在构造函数或静态初始化程序之外“神奇地”设置了 System.in，System.out 和 System.err， 这需要特别注意，因为它们是用于 fianl 字段的 JMM 规则的特殊遗留例外。</p>
+</li>
+<li><p>Similarly, internal JVM deserialization code that sets final fields normally requires a StoreStore barrier.<br>同样，设置 final 字段的内部 JVM 反序列化代码通常需要一个 StoreStore 屏障。</p>
+</li>
+<li><p>Finalization support may require barriers (within garbage collectors) to ensure that Object.finalize code sees all stores to all fields prior to the objects becoming unreferenced. This is usually ensured via the synchronization used to add and remove references in reference queues.<br>Finalization 支持可能需要屏障（在垃圾收集器内），以确保 Object.finalize 代码在对象成为不可引用之前能够看到所有字段的所有存储。通常通过用于在引用队列中添加和删除引用的同步来确保这一点。</p>
+</li>
+<li><p>Calls to and returns from JNI routines may require barriers, although this seems to be a quality of implementation issue.<br>尽管这似乎是实现质量的问题，但对JNI例程的调用和返回能会遇到屏障。</p>
+</li>
+<li><p>Most processors have other synchronizing instructions designed primarily for use with IO and OS actions. These don’t impact JMM issues directly, but may be involved in IO, class loading, and dynamic code generation.<br>大多数处理器还有其他同步指令，这些指令主要设计用于 IO 和 OS 操作。 这些不会直接影响 JMM 问题，但可能涉及 IO，类加载和动态代码生成</p>
+<h2 id="Acknowledgments-致谢"><a href="#Acknowledgments-致谢" class="headerlink" title="Acknowledgments (致谢)"></a>Acknowledgments (致谢)</h2><p>Thanks to Bill Pugh, Dave Dice, Jeremy Manson, Kourosh Gharachorloo, Tim Harris, Cliff Click, Allan Kielstra, Yue Yang, Hans Boehm, Kevin Normoyle, Juergen Kreileder, Alexander Terekhov, Tom Deneau, Clark Verbrugge, Peter Kessler, Peter Sewell, Jan Vitek, and Richard Grisenthwaite for corrections and suggestions.</p>
+</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Java/" rel="tag"># Java</a>
+              <a href="/tags/Java%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/" rel="tag"># Java内存模型</a>
+              <a href="/tags/memory-barrier/" rel="tag"># memory barrier</a>
+              <a href="/tags/JSR-133-Cookbook/" rel="tag"># JSR-133 Cookbook</a>
+              <a href="/tags/atomic-instruction/" rel="tag"># atomic instruction</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/Java%20%E5%8E%9F%E5%AD%90%E7%B1%BB%E7%9A%84%E4%BD%BF%E7%94%A8%E5%8F%8A%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/" rel="prev" title="Java原子类的使用及原理分析">
+                  <i class="fa fa-chevron-left"></i> Java原子类的使用及原理分析
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/JSR-133-FAQ-%E4%B8%AD%E8%8B%B1%E5%AF%B9%E7%85%A7%E7%89%88/" rel="next" title="JSR-133 FAQ 中英对照版翻译">
+                  JSR-133 FAQ 中英对照版翻译 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">YellowStar5</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : 'c7399bb9f366b510f657',
+      clientSecret: '952cfd3a5207d8ddfc497983491a1089cf2985c4',
+      repo        : 'gitalk',
+      owner       : 'codercuixin',
+      admin       : ['codercuixin'],
+      id          : '2efd528aa3eee83f7f06d06507621b12',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

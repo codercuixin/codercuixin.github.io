@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.1/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yellowstar5.cn","root":"/","scheme":"Muse","version":"8.0.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
+  </script>
+
+  <meta name="description" content="在上一篇文章里面，我们讲了如何搭建带有Acl控制的Consul集群。这一篇文章主要讲述一下上一篇文章那一大串配置文件的含义。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Consul ACL集群配置说明以及ACL Token的用法">
+<meta property="og:url" content="yellowstar5.cn/Consul%20ACL%E9%9B%86%E7%BE%A4%E9%85%8D%E7%BD%AE%E8%AF%B4%E6%98%8E%E4%BB%A5%E5%8F%8AACL%20Token%E7%9A%84%E7%94%A8%E6%B3%95/index.html">
+<meta property="og:site_name" content="YellowStar5">
+<meta property="og:description" content="在上一篇文章里面，我们讲了如何搭建带有Acl控制的Consul集群。这一篇文章主要讲述一下上一篇文章那一大串配置文件的含义。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190605201638277.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190605215800475.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190605215925764.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190605222230929.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190605222649682.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190605224828784.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/201906052251318.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190605225143555.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190605225231342.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190605225213980.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190605230713643.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190605230726536.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190605230742375.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190601153218300.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70">
+<meta property="article:published_time" content="2019-06-05T15:56:36.000Z">
+<meta property="article:modified_time" content="2020-08-25T09:15:13.991Z">
+<meta property="article:author" content="YellowStar5">
+<meta property="article:tag" content="Consul">
+<meta property="article:tag" content="ACL Token">
+<meta property="article:tag" content="服务发现与注册">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://img-blog.csdnimg.cn/20190605201638277.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70">
+
+
+<link rel="canonical" href="yellowstar5.cn/Consul%20ACL%E9%9B%86%E7%BE%A4%E9%85%8D%E7%BD%AE%E8%AF%B4%E6%98%8E%E4%BB%A5%E5%8F%8AACL%20Token%E7%9A%84%E7%94%A8%E6%B3%95/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Consul ACL集群配置说明以及ACL Token的用法 | YellowStar5</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">YellowStar5</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">风物长宜放眼量</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <section class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-%E9%85%8D%E7%BD%AE%E8%AF%B4%E6%98%8E"><span class="nav-number">1.</span> <span class="nav-text">1.配置说明</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-1-%E5%8B%98%E8%AF%AF"><span class="nav-number">1.1.</span> <span class="nav-text">1.1 勘误</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-2-%E6%88%91%E4%BB%AC%E5%85%88%E6%9D%A5%E7%9C%8B%E4%B8%80%E4%B8%8Bconsul-server-agent%E7%9A%84%E9%85%8D%E7%BD%AE%E3%80%82"><span class="nav-number">1.2.</span> <span class="nav-text">1.2 我们先来看一下consul server agent的配置。</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-3-%E5%86%8D%E6%9D%A5%E8%AF%B4%E4%B8%8Bconsul-client1%E7%9A%84%E7%9B%B8%E5%85%B3%E9%85%8D%E7%BD%AE%E3%80%82"><span class="nav-number">1.3.</span> <span class="nav-text">1.3 再来说下consul-client1的相关配置。</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-ACL-Token%E7%9A%84%E7%94%A8%E6%B3%95"><span class="nav-number">2.</span> <span class="nav-text">2. ACL Token的用法</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1-ACL-Token-%E6%9C%89%E4%BB%80%E4%B9%88%E7%94%A8%E5%91%A2%EF%BC%9F"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 ACL Token 有什么用呢？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-2-%E4%B8%8D%E5%B8%A6Token%E8%A1%8C%E4%B8%8D%E8%A1%8C%EF%BC%9F"><span class="nav-number">2.2.</span> <span class="nav-text">2.2  不带Token行不行？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-3-%E4%B8%8D%E5%B8%A6token%E6%98%AF%E4%B8%8D%E8%A1%8C%EF%BC%8C%E9%82%A3%E8%83%BD%E4%B8%8D%E8%83%BD%E5%B8%A6%E6%9D%83%E9%99%90%E5%B0%8F%E7%82%B9%E7%9A%84token%E5%91%A2%EF%BC%9F"><span class="nav-number">2.3.</span> <span class="nav-text">2.3 不带token是不行，那能不能带权限小点的token呢？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-1-%E5%85%88%E7%BB%99%E4%B8%A4%E4%B8%AA%E9%83%A8%E9%97%A8%E5%90%84%E6%B3%A8%E5%86%8C%E4%B8%80%E4%B8%AA%E6%9C%8D%E5%8A%A1"><span class="nav-number">2.3.1.</span> <span class="nav-text">2.3.1 先给两个部门各注册一个服务</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-2-%E7%94%9F%E6%88%90%E4%B8%A4%E4%B8%AAtoken%EF%BC%8C%E8%AE%A9%E9%83%A8%E9%97%A8A%EF%BC%8CB%E5%90%84%E8%87%AA%E7%AE%A1%E7%90%86%E8%87%AA%E5%B7%B1%E7%9A%84%E6%9C%8D%E5%8A%A1"><span class="nav-number">2.3.2.</span> <span class="nav-text">2.3.2. 生成两个token，让部门A，B各自管理自己的服务</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#2-3-2-1%E5%85%88%E7%94%9F%E6%88%90%E9%83%A8%E9%97%A8A%E7%9A%84token"><span class="nav-number">2.3.2.1.</span> <span class="nav-text">2.3.2.1先生成部门A的token</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-3-2-2-%E5%9C%A8%E7%94%9F%E6%88%90%E9%83%A8%E9%97%A8B%E7%9A%84token"><span class="nav-number">2.3.2.2.</span> <span class="nav-text">2.3.2. 2.在生成部门B的token</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-3-%E7%94%A8%E4%B8%8D%E5%90%8C%E7%9A%84token%E6%9D%A5%E8%8E%B7%E5%8F%96%E6%9C%8D%E5%8A%A1%E5%88%97%E8%A1%A8"><span class="nav-number">2.4.</span> <span class="nav-text">2.3.用不同的token来获取服务列表</span></a></li></ol></li></ol></div>
+        </section>
+        <!--/noindex-->
+
+        <section class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">YellowStar5</p>
+  <div class="site-description" itemprop="description">Java后端程序员，想做个手艺人。</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">14</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">34</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://www.douban.com/people/146579421/" title="豆瓣 → https:&#x2F;&#x2F;www.douban.com&#x2F;people&#x2F;146579421&#x2F;" rel="noopener" target="_blank"><i class="fas fa-book-reader fa-fw"></i>豆瓣</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/codercuixin" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;codercuixin" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/u/5509464340" title="微博 → https:&#x2F;&#x2F;weibo.com&#x2F;u&#x2F;5509464340" rel="noopener" target="_blank"><i class="fab fa-weibo fa-fw"></i>微博</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://yellowstar5.cn/atom.xml" title="RSS → https:&#x2F;&#x2F;yellowstar5.cn&#x2F;atom.xml"><i class="fa fa-rss-square fa-fw"></i>RSS</a>
+      </span>
+  </div>
+
+
+
+        </section>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="yellowstar5.cn/Consul%20ACL%E9%9B%86%E7%BE%A4%E9%85%8D%E7%BD%AE%E8%AF%B4%E6%98%8E%E4%BB%A5%E5%8F%8AACL%20Token%E7%9A%84%E7%94%A8%E6%B3%95/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="YellowStar5">
+      <meta itemprop="description" content="Java后端程序员，想做个手艺人。">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="YellowStar5">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Consul ACL集群配置说明以及ACL Token的用法
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-06-05 23:56:36" itemprop="dateCreated datePublished" datetime="2019-06-05T23:56:36+08:00">2019-06-05</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020-08-25 17:15:13" itemprop="dateModified" datetime="2020-08-25T17:15:13+08:00">2020-08-25</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Consul/" itemprop="url" rel="index"><span itemprop="name">Consul</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>在上一篇文章里面，我们讲了如何搭建带有Acl控制的Consul集群。<br>这一篇文章主要讲述一下上一篇文章那一大串配置文件的含义。</p>
+<a id="more"></a>
+
+<h1 id="1-配置说明"><a href="#1-配置说明" class="headerlink" title="1.配置说明"></a>1.配置说明</h1><h2 id="1-1-勘误"><a href="#1-1-勘误" class="headerlink" title="1.1 勘误"></a>1.1 勘误</h2><p>上一篇文章关于机器规划方面，consul client agent的端口写的有误。这里再贴一下正确的机器规划。<br><img src="https://img-blog.csdnimg.cn/20190605201638277.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h2 id="1-2-我们先来看一下consul-server-agent的配置。"><a href="#1-2-我们先来看一下consul-server-agent的配置。" class="headerlink" title="1.2 我们先来看一下consul server agent的配置。"></a>1.2 我们先来看一下consul server agent的配置。</h2><p>上一节中，提供了三个配置文件，consul-server1.json, consul-server2.json以及consul-server3.json。<br>其中consul-server1.json参数最多，这里就以它来说明各个配置的含义：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    &quot;datacenter&quot;:&quot;dc1&quot;,</span><br><span class="line">    &quot;primary_datacenter&quot;:&quot;dc1&quot;,</span><br><span class="line">    &quot;bootstrap_expect&quot;:1,</span><br><span class="line">    &quot;start_join&quot;:[</span><br><span class="line">        &quot;10.211.55.25&quot;,</span><br><span class="line">        &quot;10.211.55.26&quot;</span><br><span class="line">    ],</span><br><span class="line">    &quot;retry_join&quot;:[</span><br><span class="line">        &quot;10.211.55.25&quot;,</span><br><span class="line">        &quot;10.211.55.26&quot;</span><br><span class="line">    ],</span><br><span class="line">    &quot;advertise_addr&quot;: &quot;10.211.55.28&quot;,</span><br><span class="line">    &quot;bind_addr&quot;: &quot;10.211.55.28&quot;,</span><br><span class="line">    &quot;server&quot;:true,</span><br><span class="line">    &quot;connect&quot;:&#123;</span><br><span class="line">        &quot;enabled&quot;:true</span><br><span class="line">    &#125;,</span><br><span class="line">    &quot;node_name&quot;:&quot;consul-server1&quot;,</span><br><span class="line">    &quot;data_dir&quot;:&quot;&#x2F;opt&#x2F;consul&#x2F;data&#x2F;&quot;,</span><br><span class="line">    &quot;enable_script_checks&quot;:false,</span><br><span class="line">    &quot;enable_local_script_checks&quot;:true,</span><br><span class="line">    &quot;log_file&quot;:&quot;&#x2F;opt&#x2F;consul&#x2F;log&#x2F;&quot;,</span><br><span class="line">    &quot;log_level&quot;:&quot;info&quot;,</span><br><span class="line">    &quot;log_rotate_bytes&quot;:100000000,</span><br><span class="line">    &quot;log_rotate_duration&quot;:&quot;24h&quot;,</span><br><span class="line">    &quot;encrypt&quot;:&quot;krCysDJnrQ8dtA7AbJav8g&#x3D;&#x3D;&quot;,</span><br><span class="line">    &quot;acl&quot;:&#123;</span><br><span class="line">        &quot;enabled&quot;:true,</span><br><span class="line">        &quot;default_policy&quot;:&quot;deny&quot;,</span><br><span class="line">        &quot;enable_token_persistence&quot;:true,</span><br><span class="line">        &quot;tokens&quot;:&#123;</span><br><span class="line">            &quot;master&quot;:&quot;cd76a0f7-5535-40cc-8696-073462acc6c7&quot;,</span><br><span class="line">	    &quot;agent&quot;:&quot;deaa315d-98c5-b9f6-6519-4c8f6574a551&quot;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>datacenter  此标志表示代理运行的数据中心。如果未提供，则默认为“dc1”。 Consul拥有对多个数据中心的一流支持，但它依赖于正确的配置。同一数据中心中的节点应在同一个局域网内。</li>
+<li>primary_datacenter: 这指定了对ACL信息具有权威性的数据中心。必须提供它才能启用ACL。</li>
+<li>bootstrap_expect: Consul将等待指定数量的服务器可用，然后才会引导群集。这允许自动选择初始领导者。</li>
+<li>start_join: 一个字符串数组，指定是其他的consul server agent的地址。这里这样配置，会在启动时，尝试将consul-server2，consul-server3这两个节点加进来，形成一个集群。</li>
+<li>retry_join: 允许start_join时失败时，继续重新连接。重试的时间间隔，可以用retry_interval设置，默认是30s;重试的最大次数，可以用retry_max设置，默认是0，也就是无限次重试。关于retry_interval和retry_max，这里都是用的默认值。</li>
+<li>bind_addr:  内部群集通信绑定的地址。这是群集中所有其他节点都应该可以访问的IP地址。默认情况下，这是“0.0.0.0”，这意味着Consul将绑定到本地计算机上的所有地址，并将第一个可用的私有IPv4地址通告给群集的其余部分。如果有多个私有IPv4地址可用，Consul将在启动时退出并显示错误。如果指定“[::]”，Consul将通告第一个可用的公共IPv6地址。如果有多个可用的公共IPv6地址，Consul将在启动时退出并显示错误。 Consul同时使用TCP和UDP，并且两者使用相同的端口。如果您有防火墙，请务必同时允许这两种协议。</li>
+<li>advertise_addr: 更改我们向群集中其他节点通告的地址。默认情况下，会使用-bind参数指定的地址.</li>
+<li>server: 是否是server agent节点。</li>
+<li>connect.enabled: 是否启动<a target="_blank" rel="noopener" href="https://www.consul.io/docs/connect/index.html">Consul Connect</a>，这里是启用的。</li>
+<li>node_name：节点名称。</li>
+<li>data_dir: agent存储状态的目录。</li>
+<li>enable_script_checks： 是否在此代理上启用执行脚本的健康检查。有安全漏洞，默认值就是false，这里单独提示下。</li>
+<li>enable_local_script_checks: 与enable_script_checks类似，但只有在本地配置文件中定义它们时才启用它们。仍然不允许在HTTP API注册中定义的脚本检查。</li>
+<li>log-file: 将所有Consul Agent日志消息重定向到文件。这里指定的是/opt/consul/log/目录。</li>
+<li>log_rotate_bytes：指定在需要轮换之前应写入日志的字节数。除非指定，否则可以写入日志文件的字节数没有限制</li>
+<li>log_rotate_duration：指定在需要旋转日志之前应写入日志的最长持续时间。除非另有说明，否则日志会每天轮换（24小时。单位可以是”ns”, “us” (or “µs”), “ms”, “s”, “m”, “h”， 比如设置值为24h</li>
+<li>encrypt：用于加密Consul Gossip 协议交换的数据。在启动各个server之前，配置成同一个UUID值就行，或者你用命令行consul keygen 命令来生成也可以。</li>
+<li>acl.enabled: 是否启用acl.</li>
+<li>acl.default_policy: “allow”或“deny”; 默认为“allow”，但这将在未来的主要版本中更改。当没有匹配规则时，默认策略控制令牌的行为。在“allow”模式下，ACL是黑名单：允许任何未明确禁止的操作。在“deny”模式下，ACL是白名单：阻止任何未明确允许的操作.</li>
+<li>acl.enable_token_persistence:  可能值为true或者false。值为true时，API使用的令牌集合将被保存到磁盘，并且当代理重新启动时会重新加载。</li>
+<li>acl.tokens.master:   具有全局管理的权限，也就是最大的权限。它允许操作员使用众所周知的令牌密钥ID来引导ACL系统。需要在所有的server agent上设置同一个值，可以设置为一个随机的UUID。这个值权限最大，注意保管好。</li>
+<li>acl.tokens.agent:  用于客户端和服务器执行内部操作.比如catalog api的更新，反熵同步等。</li>
+</ul>
+<h2 id="1-3-再来说下consul-client1的相关配置。"><a href="#1-3-再来说下consul-client1的相关配置。" class="headerlink" title="1.3 再来说下consul-client1的相关配置。"></a>1.3 再来说下consul-client1的相关配置。</h2><p>我再贴一下配置信息。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    &quot;datacenter&quot;:&quot;dc1&quot;,</span><br><span class="line">    &quot;primary_datacenter&quot;:&quot;dc1&quot;,</span><br><span class="line">    &quot;advertise_addr&quot;: &quot;10.211.55.27&quot;,</span><br><span class="line">    &quot;start_join&quot;:[</span><br><span class="line">         &quot;10.211.55.25&quot;,</span><br><span class="line">        &quot;10.211.55.26&quot;,</span><br><span class="line">        &quot;10.211.55.28&quot;</span><br><span class="line">    ],</span><br><span class="line">    &quot;retry_join&quot;:[</span><br><span class="line">         &quot;10.211.55.25&quot;,</span><br><span class="line">        &quot;10.211.55.26&quot;,</span><br><span class="line">        &quot;10.211.55.28&quot;</span><br><span class="line">    ],</span><br><span class="line">    &quot;bind_addr&quot;:&quot;10.211.55.27&quot;,</span><br><span class="line">    &quot;node_name&quot;:&quot;consul-client1&quot;,</span><br><span class="line">    &quot;client_addr&quot;:&quot;0.0.0.0&quot;,</span><br><span class="line">    &quot;connect&quot;:&#123;</span><br><span class="line">        &quot;enabled&quot;:true</span><br><span class="line">    &#125;,</span><br><span class="line">    &quot;data_dir&quot;:&quot;&#x2F;opt&#x2F;consul&#x2F;data&#x2F;&quot;,</span><br><span class="line">    &quot;log_file&quot;:&quot;&#x2F;opt&#x2F;consul&#x2F;log&#x2F;&quot;,</span><br><span class="line">    &quot;log_level&quot;:&quot;info&quot;,</span><br><span class="line">    &quot;log_rotate_bytes&quot;:100000000,</span><br><span class="line">    &quot;log_rotate_duration&quot;:&quot;24h&quot;,</span><br><span class="line">    &quot;encrypt&quot;:&quot;krCysDJnrQ8dtA7AbJav8g&#x3D;&#x3D;&quot;,</span><br><span class="line">    &quot;ui&quot;:true,</span><br><span class="line">    &quot;enable_script_checks&quot;:false,</span><br><span class="line">    &quot;enable_local_script_checks&quot;:true,</span><br><span class="line">    &quot;disable_remote_exec&quot;:true,</span><br><span class="line">    &quot;ports&quot;:&#123;</span><br><span class="line">        &quot;http&quot;:7110</span><br><span class="line">    &#125;,</span><br><span class="line">    &quot;acl&quot;:&#123;</span><br><span class="line">        &quot;enabled&quot;:true,</span><br><span class="line">        &quot;default_policy&quot;:&quot;deny&quot;,</span><br><span class="line">        &quot;enable_token_persistence&quot;:true,</span><br><span class="line">        &quot;tokens&quot;:&#123;</span><br><span class="line">	    &quot;agent&quot;:&quot;deaa315d-98c5-b9f6-6519-4c8f6574a551&quot;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>这里，start_join, retry_join都是指定的server agent的地址。<br>另外还没有提过的配置就是client_addr， ui, ports.http .<br>下面依次说明：</p>
+<ul>
+<li>client_addr: Consul将绑定客户端接口的地址，包括HTTP和DNS服务器</li>
+<li>ui: 启用内置Web UI服务器和对应所需的HTTP路由</li>
+<li>ports.http： 更改默认的http端口。</li>
+</ul>
+<h1 id="2-ACL-Token的用法"><a href="#2-ACL-Token的用法" class="headerlink" title="2. ACL Token的用法"></a>2. ACL Token的用法</h1><h2 id="2-1-ACL-Token-有什么用呢？"><a href="#2-1-ACL-Token-有什么用呢？" class="headerlink" title="2.1 ACL Token 有什么用呢？"></a>2.1 ACL Token 有什么用呢？</h2><p>可以有人会说，你上面让我又是搭建环境，又是看配置说明，我建好了一个这么一个带ACL控制的Consul集群有什么用呢？</p>
+<p>ACL 全称 Access Control List，也就是访问控制列表的意思，现在我们生成了带有ACL控制的集群，就意味不是谁都能来向我注册的，也不是谁都能像我获取服务列表– 也就是你想对Consul执行任何操作，你得对应的令牌，也就是ACL Token。</p>
+<h2 id="2-2-不带Token行不行？"><a href="#2-2-不带Token行不行？" class="headerlink" title="2.2  不带Token行不行？"></a>2.2  不带Token行不行？</h2><p>为了模拟一般的Http请求，我这里下载一个<a target="_blank" rel="noopener" href="https://www.getpostman.com/">Postman</a>, 是的这里没有用命令行curl。<br>我们现在postman输入<br><a target="_blank" rel="noopener" href="http://127.0.0.1:7110/v1/catalog/nodes">http://127.0.0.1:7110/v1/catalog/nodes</a><br>会发现一个节点都拿不到：</p>
+<p><img src="https://img-blog.csdnimg.cn/20190605215800475.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70" alt=" without token"><br>此时如果加上master token, 也就是访问<br><a target="_blank" rel="noopener" href="http://127.0.0.1:7110/v1/catalog/nodes?token=cd76a0f7-5535-40cc-8696-073462acc6c7">http://127.0.0.1:7110/v1/catalog/nodes?token=cd76a0f7-5535-40cc-8696-073462acc6c7</a><br>会发现可以拿到所有节点的数据（下图只截取一部分）<br><img src="https://img-blog.csdnimg.cn/20190605215925764.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70" alt="with token"></p>
+<h2 id="2-3-不带token是不行，那能不能带权限小点的token呢？"><a href="#2-3-不带token是不行，那能不能带权限小点的token呢？" class="headerlink" title="2.3 不带token是不行，那能不能带权限小点的token呢？"></a>2.3 不带token是不行，那能不能带权限小点的token呢？</h2><p>前面说过master token是权限最大的token，假如这样给出去，各个部分都拿来用。如果两个不同的部分注册名称一样的服务该怎么办，取消注册了其他部门的服务又该怎么办。总之，权限能不能给小点，答案是可以的。<br>首先说一下目标：<br>1.不同部门的服务必须要有自己的前缀，比如deptA表示部门A，比如deptB表示部门B<br>2.不同部门只能更改自己的服务。</p>
+<h3 id="2-3-1-先给两个部门各注册一个服务"><a href="#2-3-1-先给两个部门各注册一个服务" class="headerlink" title="2.3.1 先给两个部门各注册一个服务"></a>2.3.1 先给两个部门各注册一个服务</h3><p>注册服务deptA-pingbaidu1, 注意这里选择的PUT方法。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"> PUT http:&#x2F;&#x2F;127.0.0.1:7110&#x2F;v1&#x2F;agent&#x2F;service&#x2F;register?token&#x3D;cd76a0f7-5535-40cc-8696-073462acc6c7</span><br><span class="line"> &#123;</span><br><span class="line">    &quot;ID&quot;: &quot;deptA-pingbaidu1&quot;,</span><br><span class="line">    &quot;Name&quot;: &quot;deptA-pingbaidu&quot;,</span><br><span class="line">    &quot;Tags&quot;: [</span><br><span class="line">        &quot;primary&quot;,</span><br><span class="line">        &quot;v1&quot;</span><br><span class="line">    ],</span><br><span class="line">    &quot;Address&quot;: &quot;127.0.0.1&quot;,</span><br><span class="line">    &quot;Port&quot;: 8000,</span><br><span class="line">    &quot;Meta&quot;: &#123;</span><br><span class="line">        &quot;my_version&quot;: &quot;4.0&quot;</span><br><span class="line">    &#125;,</span><br><span class="line">    &quot;EnableTagOverride&quot;: false,</span><br><span class="line">    &quot;Check&quot;: &#123;</span><br><span class="line">        &quot;DeregisterCriticalServiceAfter&quot;: &quot;90m&quot;,</span><br><span class="line">        &quot;HTTP&quot;: &quot;http:&#x2F;&#x2F;www.baidu.com&#x2F;&quot;,</span><br><span class="line">        &quot;Interval&quot;: &quot;10s&quot;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;　</span><br></pre></td></tr></table></figure>
+<p>在截个图，当返回status为200时，表示成功注册<br><img src="https://img-blog.csdnimg.cn/20190605222230929.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70" alt="注册成功"><br>此时可以在consul web ui中进行查看，打开consul-client1所在的机器，在浏览器中，输入<a target="_blank" rel="noopener" href="http://127.0.0.1:7110/ui/dc1/services%EF%BC%8C%EF%BC%88">http://127.0.0.1:7110/ui/dc1/services，（</a> 注意在此之前你需要先设置consul web ui的token，上一篇文章末尾已经提及），此时会看到<br><img src="https://img-blog.csdnimg.cn/20190605222649682.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70" alt="service-on-web-ui"><br>类似地，在注册个deptA-pingMe1的服务</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"> PUT http:&#x2F;&#x2F;127.0.0.1:7110&#x2F;v1&#x2F;agent&#x2F;service&#x2F;register?token&#x3D;cd76a0f7-5535-40cc-8696-073462acc6c7</span><br><span class="line">&#123;</span><br><span class="line">    &quot;ID&quot;: &quot;deptB-pingMe1&quot;,</span><br><span class="line">    &quot;Name&quot;: &quot;deptB-pingMe&quot;,</span><br><span class="line">    &quot;Tags&quot;: [</span><br><span class="line">        &quot;primary&quot;,</span><br><span class="line">        &quot;v1&quot;</span><br><span class="line">    ],</span><br><span class="line">    &quot;Address&quot;: &quot;127.0.0.1&quot;,</span><br><span class="line">    &quot;Port&quot;: 7000,</span><br><span class="line">    &quot;Meta&quot;: &#123;</span><br><span class="line">        &quot;my_version&quot;: &quot;4.0&quot;</span><br><span class="line">    &#125;,</span><br><span class="line">    &quot;EnableTagOverride&quot;: false,</span><br><span class="line">    &quot;Check&quot;: &#123;</span><br><span class="line">        &quot;DeregisterCriticalServiceAfter&quot;: &quot;90m&quot;,</span><br><span class="line">        &quot;HTTP&quot;: &quot;https:&#x2F;&#x2F;blog.csdn.net&#x2F;yellowstar5&quot;,</span><br><span class="line">        &quot;Interval&quot;: &quot;10s&quot;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;　</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-3-2-生成两个token，让部门A，B各自管理自己的服务"><a href="#2-3-2-生成两个token，让部门A，B各自管理自己的服务" class="headerlink" title="2.3.2. 生成两个token，让部门A，B各自管理自己的服务"></a>2.3.2. 生成两个token，让部门A，B各自管理自己的服务</h3><p>首先我们来生成部门A的policy， 意思度所有节点具有写权限（写权限包括读），并且只能写deptA开头的服务。</p>
+<h4 id="2-3-2-1先生成部门A的token"><a href="#2-3-2-1先生成部门A的token" class="headerlink" title="2.3.2.1先生成部门A的token"></a>2.3.2.1先生成部门A的token</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">node_prefix &quot;&quot; &#123;</span><br><span class="line">    	policy &#x3D; &quot;write&quot;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">service_prefix &quot;deptA&quot;&#123;</span><br><span class="line">  	  policy &#x3D; &quot;write&quot;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>下面是具体的生成过程<br>1.新建policy并保存</p>
+<p><img src="https://img-blog.csdnimg.cn/20190605224828784.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>2.生成token<br><img src="https://img-blog.csdnimg.cn/201906052251318.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br><img src="https://img-blog.csdnimg.cn/20190605225143555.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>3.查看token列表，并点击deptA-policy那一项查看并复制token<br><img src="https://img-blog.csdnimg.cn/20190605225231342.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br><img src="https://img-blog.csdnimg.cn/20190605225213980.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h4 id="2-3-2-2-在生成部门B的token"><a href="#2-3-2-2-在生成部门B的token" class="headerlink" title="2.3.2. 2.在生成部门B的token"></a>2.3.2. 2.在生成部门B的token</h4><p>只需要把policy稍作修改就可以，其他部门和部门A的类似，这里就不贴图了。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">node_prefix &quot;&quot; &#123;</span><br><span class="line">    	policy &#x3D; &quot;write&quot;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">service_prefix &quot;deptB&quot;&#123;</span><br><span class="line">  	  policy &#x3D; &quot;write&quot;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-3-用不同的token来获取服务列表"><a href="#2-3-用不同的token来获取服务列表" class="headerlink" title="2.3.用不同的token来获取服务列表"></a>2.3.用不同的token来获取服务列表</h2><p>最后我们拿到部门A和部门B的token，以及master的token<br>我这里deptA的token是：8764c083-0acb-e11e-433d-8d8803db9bd2<br>deptB的token是： 052f467f-9581-cc7c-a8a5-84d8df51dc9d<br>master token是: d76a0f7-5535-40cc-8696-073462acc6c7<br>下面用postman测试一下，看看不同token返回的服务列表</p>
+<p>deptA-token<br><a target="_blank" rel="noopener" href="http://127.0.0.1:7110/v1/agent/services?token=8764c083-0acb-e11e-433d-8d8803db9bd2">http://127.0.0.1:7110/v1/agent/services?token=8764c083-0acb-e11e-433d-8d8803db9bd2</a><br><img src="https://img-blog.csdnimg.cn/20190605230713643.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>deptB-token<br><a target="_blank" rel="noopener" href="http://127.0.0.1:7110/v1/agent/services?token=052f467f-9581-cc7c-a8a5-84d8df51dc9d">http://127.0.0.1:7110/v1/agent/services?token=052f467f-9581-cc7c-a8a5-84d8df51dc9d</a><br><img src="https://img-blog.csdnimg.cn/20190605230726536.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>master-token<br><a target="_blank" rel="noopener" href="http://127.0.0.1:7110/v1/agent/services?token=cd76a0f7-5535-40cc-8696-073462acc6c7">http://127.0.0.1:7110/v1/agent/services?token=cd76a0f7-5535-40cc-8696-073462acc6c7</a><br><img src="https://img-blog.csdnimg.cn/20190605230742375.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>可以发现deptA-token只能看到部门A的服务，deptB-token只能看到部门B的服务，master-token可以看到所以的。<br>另外取消注册，注册之类的验证大家可以自己试试，都与上面的方式差不多，只不过要使用不同的Http API<br>，<a target="_blank" rel="noopener" href="https://www.consul.io/api/agent/service.html%EF%BC%8C%E5%9C%A8%E8%BF%99%E4%B8%AA%E5%9C%B0%E5%9D%80%E4%BD%A0%E5%8F%AF%E4%BB%A5%E7%9C%8B%E5%88%B0consul">https://www.consul.io/api/agent/service.html，在这个地址你可以看到consul</a> 提供的关于服务相关的api。</p>
+<p>参考：</p>
+<p><a target="_blank" rel="noopener" href="https://www.consul.io/api/agent/service.html">https://www.consul.io/api/agent/service.html</a><br><a target="_blank" rel="noopener" href="https://www.consul.io/docs/agent/options.html">https://www.consul.io/docs/agent/options.html</a><br>文章之后会第一时间发于微信， 欢迎关注我的微信公众号，大家一起交流学习<br><img src="https://img-blog.csdnimg.cn/20190601153218300.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Consul/" rel="tag"># Consul</a>
+              <a href="/tags/ACL-Token/" rel="tag"># ACL Token</a>
+              <a href="/tags/%E6%9C%8D%E5%8A%A1%E5%8F%91%E7%8E%B0%E4%B8%8E%E6%B3%A8%E5%86%8C/" rel="tag"># 服务发现与注册</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/Consul%20%E9%9B%86%E7%BE%A4%E5%B8%A6ACL%E6%8E%A7%E5%88%B6%E6%90%AD%E5%BB%BA/" rel="prev" title="Consul 集群带ACL控制搭建">
+                  <i class="fa fa-chevron-left"></i> Consul 集群带ACL控制搭建
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/Consul%20%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5%EF%BC%8C%E5%90%8C%E7%B1%BB%E6%AF%94%E8%BE%83%E5%92%8C%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/" rel="next" title="Consul 基本概念，同类比较和内部原理">
+                  Consul 基本概念，同类比较和内部原理 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">YellowStar5</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : 'c7399bb9f366b510f657',
+      clientSecret: '952cfd3a5207d8ddfc497983491a1089cf2985c4',
+      repo        : 'gitalk',
+      owner       : 'codercuixin',
+      admin       : ['codercuixin'],
+      id          : 'bd10d3b8ba01b063921425be7d36c5f0',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>
