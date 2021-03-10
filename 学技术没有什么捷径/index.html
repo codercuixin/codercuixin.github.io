@@ -24,23 +24,23 @@
     var CONFIG = {"hostname":"yellowstar5.cn","root":"/","scheme":"Muse","version":"8.0.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
   </script>
 
-  <meta name="description" content="为什么要使用lombok。 普通的 POJO 需要写或是用IDEA等集成开发环境生成大量gettter, setter方法 普通的 POJO 对于 equals 和 hashCode 等方法，也需要自己维护。特别你写接口的时候，如果添加了一个字段忘了维护，可能会导致一些bug。 普通的 POJO 没有 builder 的支持，得自己实现该模式。 ….  总之，lombok 极大地简化你的代码，去掉">
+  <meta name="description" content="这篇文章是我 2019 年写的年末小总结，稍加修改， 主要是回顾一下自己的成长历程。当然，如果对其他人有帮助，那就更好了。 1.有没有什么捷径？ 大二下我是 2016 年 6 月 1 号进冯大（Fenng）的小密圈，算到现在已经 2 年多了。说实话，刚开始进去的时候，老是在想有没有捷径，成功的秘诀之类的。在圈子里呆了一段时间发现，好像大多人都是一步步走，并没有什么奇技淫巧，一步登天。 2.学什么呢">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Lombok 使用完全指南">
-<meta property="og:url" content="yellowstar5.cn/Lombok-%E4%BD%BF%E7%94%A8%E5%AE%8C%E5%85%A8%E6%8C%87%E5%8D%97/index.html">
+<meta property="og:title" content="学技术没有什么捷径">
+<meta property="og:url" content="yellowstar5.cn/%E5%AD%A6%E6%8A%80%E6%9C%AF%E6%B2%A1%E6%9C%89%E4%BB%80%E4%B9%88%E6%8D%B7%E5%BE%84/index.html">
 <meta property="og:site_name" content="YellowStar5">
-<meta property="og:description" content="为什么要使用lombok。 普通的 POJO 需要写或是用IDEA等集成开发环境生成大量gettter, setter方法 普通的 POJO 对于 equals 和 hashCode 等方法，也需要自己维护。特别你写接口的时候，如果添加了一个字段忘了维护，可能会导致一些bug。 普通的 POJO 没有 builder 的支持，得自己实现该模式。 ….  总之，lombok 极大地简化你的代码，去掉">
+<meta property="og:description" content="这篇文章是我 2019 年写的年末小总结，稍加修改， 主要是回顾一下自己的成长历程。当然，如果对其他人有帮助，那就更好了。 1.有没有什么捷径？ 大二下我是 2016 年 6 月 1 号进冯大（Fenng）的小密圈，算到现在已经 2 年多了。说实话，刚开始进去的时候，老是在想有没有捷径，成功的秘诀之类的。在圈子里呆了一段时间发现，好像大多人都是一步步走，并没有什么奇技淫巧，一步登天。 2.学什么呢">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://imgconvert.csdnimg.cn/aHR0cHM6Ly91cGxvYWQtaW1hZ2VzLmppYW5zaHUuaW8vdXBsb2FkX2ltYWdlcy80MTQ4NDY3LWExMzRkZjdlNmYxYTM3NDYucG5n">
-<meta property="article:published_time" content="2019-08-10T14:46:03.000Z">
-<meta property="article:modified_time" content="2020-09-10T10:02:16.699Z">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20210309173927483.jpg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70">
+<meta property="article:published_time" content="2021-03-08T12:57:38.000Z">
+<meta property="article:modified_time" content="2021-03-10T10:51:23.310Z">
 <meta property="article:author" content="YellowStar5">
-<meta property="article:tag" content="Lombok">
+<meta property="article:tag" content="随感">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://imgconvert.csdnimg.cn/aHR0cHM6Ly91cGxvYWQtaW1hZ2VzLmppYW5zaHUuaW8vdXBsb2FkX2ltYWdlcy80MTQ4NDY3LWExMzRkZjdlNmYxYTM3NDYucG5n">
+<meta name="twitter:image" content="https://img-blog.csdnimg.cn/20210309173927483.jpg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70">
 
 
-<link rel="canonical" href="yellowstar5.cn/Lombok-%E4%BD%BF%E7%94%A8%E5%AE%8C%E5%85%A8%E6%8C%87%E5%8D%97/">
+<link rel="canonical" href="yellowstar5.cn/%E5%AD%A6%E6%8A%80%E6%9C%AF%E6%B2%A1%E6%9C%89%E4%BB%80%E4%B9%88%E6%8D%B7%E5%BE%84/">
 
 
 <script class="page-configurations">
@@ -53,7 +53,7 @@
   };
 </script>
 
-  <title>Lombok 使用完全指南 | YellowStar5</title>
+  <title>学技术没有什么捷径 | YellowStar5</title>
   
 
 
@@ -182,7 +182,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <section class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E4%BD%BF%E7%94%A8lombok%E3%80%82"><span class="nav-number">1.</span> <span class="nav-text">为什么要使用lombok。</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#jar-%E5%8C%85%E7%9A%84%E4%B8%8B%E8%BD%BD"><span class="nav-number">2.</span> <span class="nav-text">jar 包的下载</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IntelliJ-IDEA-%E4%B8%AD-%E5%AE%89%E8%A3%85lombok%E6%8F%92%E4%BB%B6%E3%80%82"><span class="nav-number">3.</span> <span class="nav-text">IntelliJ IDEA 中 安装lombok插件。</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%8B%E9%9D%A2%E4%B8%BB%E8%A6%81%E6%98%AF%E5%AF%B9lombok-features%E9%83%A8%E5%88%86%E7%9A%84%E7%BF%BB%E8%AF%91"><span class="nav-number">4.</span> <span class="nav-text">下面主要是对lombok features部分的翻译</span></a></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E6%9C%89%E6%B2%A1%E6%9C%89%E4%BB%80%E4%B9%88%E6%8D%B7%E5%BE%84%EF%BC%9F-%E5%A4%A7%E4%BA%8C%E4%B8%8B"><span class="nav-number">1.</span> <span class="nav-text">1.有没有什么捷径？ 大二下</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E5%AD%A6%E4%BB%80%E4%B9%88%E5%91%A2%EF%BC%9F-%E5%A4%A7%E4%B8%89%E4%B8%8B"><span class="nav-number">2.</span> <span class="nav-text">2.学什么呢？ 大三下</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E5%85%88%E6%90%AC%E4%BC%9A%E7%A0%96%EF%BC%9F-%E5%A4%A7%E5%9B%9B%E4%B8%8B%E5%88%B019%E5%B9%B49%E6%9C%88%E4%BB%BD"><span class="nav-number">3.</span> <span class="nav-text">3.先搬会砖？ 大四下到19年9月份</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E4%BB%8E%E5%A4%B4%E5%86%8D%E6%9D%A5-9%E6%9C%88%E4%BB%BD%E8%87%B3%E4%BB%8A"><span class="nav-number">4.</span> <span class="nav-text">4.从头再来 9月份至今</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-%E6%80%BB%E7%BB%93"><span class="nav-number">5.</span> <span class="nav-text">5.总结</span></a></li></ol></div>
         </section>
         <!--/noindex-->
 
@@ -260,7 +260,7 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="yellowstar5.cn/Lombok-%E4%BD%BF%E7%94%A8%E5%AE%8C%E5%85%A8%E6%8C%87%E5%8D%97/">
+    <link itemprop="mainEntityOfPage" href="yellowstar5.cn/%E5%AD%A6%E6%8A%80%E6%9C%AF%E6%B2%A1%E6%9C%89%E4%BB%80%E4%B9%88%E6%8D%B7%E5%BE%84/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -273,7 +273,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          Lombok 使用完全指南
+          学技术没有什么捷径
         </h1>
 
         <div class="post-meta-container">
@@ -284,14 +284,14 @@
       </span>
       <span class="post-meta-item-text">发表于</span>
 
-      <time title="创建时间：2019-08-10 22:46:03" itemprop="dateCreated datePublished" datetime="2019-08-10T22:46:03+08:00">2019-08-10</time>
+      <time title="创建时间：2021-03-08 20:57:38" itemprop="dateCreated datePublished" datetime="2021-03-08T20:57:38+08:00">2021-03-08</time>
     </span>
       <span class="post-meta-item">
         <span class="post-meta-item-icon">
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2020-09-10 18:02:16" itemprop="dateModified" datetime="2020-09-10T18:02:16+08:00">2020-09-10</time>
+        <time title="修改时间：2021-03-10 18:51:23" itemprop="dateModified" datetime="2021-03-10T18:51:23+08:00">2021-03-10</time>
       </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -299,7 +299,7 @@
       </span>
       <span class="post-meta-item-text">分类于</span>
         <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/Lombok/" itemprop="url" rel="index"><span itemprop="name">Lombok</span></a>
+          <a href="/categories/%E9%9A%8F%E6%84%9F/" itemprop="url" rel="index"><span itemprop="name">随感</span></a>
         </span>
     </span>
 
@@ -313,77 +313,22 @@
     
     
     <div class="post-body" itemprop="articleBody">
-        <h2 id="为什么要使用lombok。"><a href="#为什么要使用lombok。" class="headerlink" title="为什么要使用lombok。"></a>为什么要使用lombok。</h2><ul>
-<li>普通的 POJO 需要写或是用IDEA等集成开发环境生成大量gettter, setter方法</li>
-<li>普通的 POJO 对于 equals 和 hashCode 等方法，也需要自己维护。特别你写接口的时候，如果添加了<br>一个字段忘了维护，可能会导致一些bug。</li>
-<li>普通的 POJO 没有 builder 的支持，得自己实现该模式。</li>
-<li>….</li>
-</ul>
-<p>总之，lombok 极大地简化你的代码，去掉了那些模板代码，让你的POJO看起来更加地清爽（可以只有类名和字段的声明，加上少量的注解）。</p>
-<h2 id="jar-包的下载"><a href="#jar-包的下载" class="headerlink" title="jar 包的下载"></a>jar 包的下载</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.projectlombok&lt;&#x2F;groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;lombok&lt;&#x2F;artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.18.8&lt;&#x2F;version&gt;</span><br><span class="line">    &lt;scope&gt;provided&lt;&#x2F;scope&gt;</span><br><span class="line">&lt;&#x2F;dependency&gt;</span><br></pre></td></tr></table></figure>
+        <p>这篇文章是我 2019 年写的年末小总结，稍加修改， 主要是回顾一下自己的成长历程。当然，如果对其他人有帮助，那就更好了。</p>
+<h3 id="1-有没有什么捷径？-大二下"><a href="#1-有没有什么捷径？-大二下" class="headerlink" title="1.有没有什么捷径？ 大二下"></a>1.有没有什么捷径？ 大二下</h3><p>我是 2016 年 6 月 1 号进冯大（Fenng）的小密圈，算到现在已经 2 年多了。说实话，刚开始进去的时候，老是在想有没有捷径，成功的秘诀之类的。在圈子里呆了一段时间发现，好像大多人都是一步步走，并没有什么奇技淫巧，一步登天。</p>
+<h3 id="2-学什么呢？-大三下"><a href="#2-学什么呢？-大三下" class="headerlink" title="2.学什么呢？ 大三下"></a>2.学什么呢？ 大三下</h3><p>各个公众号，各个新闻，就连校园里，一天到晚都在云计算，大数据，机器学习，人工智能。</p>
+<p>我要不要去学下？好吧，抵制不了诱惑，自己也不思考，看着也挺有趣，那就去试试呗。看了一段时间好像不太懂，数学基础不够，那些东西都不怎么会推导。你要是我读英文文档，调 API，跑起来不难，让我自己理解透彻改进，不行。</p>
+<p>于是就在星球里面问冯大了，冯大回答说：“普通本科生，我一般的建议是打好基础。把基本功做好，别整天追热点，热点是追不完的”。看了冯大的回答，自己又不打算考研，就老老实实复习，先准备面试。冯大说的打基础，但当时还是没闹清楚基础要学到什么程度，<strong>一方面是懒，一方面是认知有限</strong>。</p>
 <a id="more"></a>
 
-<h2 id="IntelliJ-IDEA-中-安装lombok插件。"><a href="#IntelliJ-IDEA-中-安装lombok插件。" class="headerlink" title="IntelliJ IDEA 中 安装lombok插件。"></a>IntelliJ IDEA 中 安装lombok插件。</h2><p>其他集成开发环境（比如 Visual Studio Code, Eclipse), 请参见<a target="_blank" rel="noopener" href="https://projectlombok.org/">官方文档</a> Install部分。<br><img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly91cGxvYWQtaW1hZ2VzLmppYW5zaHUuaW8vdXBsb2FkX2ltYWdlcy80MTQ4NDY3LWExMzRkZjdlNmYxYTM3NDYucG5n" alt="install-lombok-plugin.png"></p>
-<h2 id="下面主要是对lombok-features部分的翻译"><a href="#下面主要是对lombok-features部分的翻译" class="headerlink" title="下面主要是对lombok features部分的翻译"></a>下面主要是对<a target="_blank" rel="noopener" href="https://www.projectlombok.org/features/all">lombok features</a>部分的翻译</h2><blockquote>
-<p><a target="_blank" rel="noopener" href="https://github.com/codercuixin/lombok-translate/wiki/val">val</a></p>
-</blockquote>
-<p> 终于! 无忧无虑的 final 局部变量。 :v:</p>
-<blockquote>
-<p><a target="_blank" rel="noopener" href="https://github.com/codercuixin/lombok-translate/wiki/var">var</a> </p>
-</blockquote>
-<p>可变！类型可变的局部变量</p>
-<blockquote>
-<p><a target="_blank" rel="noopener" href="https://github.com/codercuixin/lombok-translate/wiki/@NonNull">@NonNull</a> </p>
-</blockquote>
-<p>我开始停止了焦虑，爱上了空指针 :kissing_heart:</p>
-<blockquote>
-<p><a target="_blank" rel="noopener" href="https://github.com/codercuixin/lombok-translate/wiki/@Getter-and-@Setter">@Getter/@Setter</a></p>
-</blockquote>
-<p>再也不用写 <code>public int getFoo() &#123;return foo;&#125;</code>了。</p>
-<blockquote>
-<p><a target="_blank" rel="noopener" href="https://github.com/codercuixin/lombok-translate/wiki/%40ToString/_edit">ToString</a></p>
-</blockquote>
-<p>没必要启动debugger来查看你的字段：让 lombok来为你生成一个 <code>ToString</code> 方法吧！</p>
-<blockquote>
-<p><a target="_blank" rel="noopener" href="https://github.com/codercuixin/lombok-translate/wiki/@EqualsAndHashCode">@EqualsAndHashCode</a></p>
-</blockquote>
-<p>让相等变得简单: 从你对象的字段中生成 <code>hashCode</code> 和 <code>equals</code> 的实现</p>
-<blockquote>
-<p><a target="_blank" rel="noopener" href="https://github.com/codercuixin/lombok-translate/wiki/@NoArgsConstructor,-@RequiredArgsConstructor,-@AllArgsConstructor">@NoArgsConstructor, @RequiredArgsConstructor and @AllArgsConstructor</a></p>
-</blockquote>
-<p>按需生成构造函数: 生成不带参数的， 每个 final/non-null 字段一个参数的，一个字段一个参数的构造函数。</p>
-<blockquote>
-<p><a target="_blank" rel="noopener" href="https://github.com/codercuixin/lombok-translate/wiki/@Data">@Data</a></p>
-</blockquote>
-<p> 所有的都合到一起：<code>@ToString</code>，<code>@ EqualsAndHashCode</code>，所有字段的 <code>@Getter</code>，所有非 final 字段的 <code>@Setter</code> 和 <code>@RequiredArgsConstructor</code> 的快捷方式！</p>
-<blockquote>
-<p><a target="_blank" rel="noopener" href="https://github.com/codercuixin/lombok-translate/wiki/@Value">@Value</a></p>
-</blockquote>
-<p>让不可变类变得非常容易。</p>
-<blockquote>
-<p><a target="_blank" rel="noopener" href="https://github.com/codercuixin/lombok-translate/wiki/@Builder">@Builder</a></p>
-</blockquote>
-<p>… and Bob’s your uncle: No-hassle fancy-pants APIs for object creation!</p>
-<blockquote>
-<p><a target="_blank" rel="noopener" href="https://github.com/codercuixin/lombok-translate/wiki/@SneakyThrows">@SneakyThrows</a></p>
-</blockquote>
-<p> 大胆抛出以前没有人抛出的已检查异常！:eyes:</p>
-<blockquote>
-<p><a target="_blank" rel="noopener" href="https://github.com/codercuixin/lombok-translate/wiki/@Synchronized">@Synchronized</a></p>
-</blockquote>
-<p><code>synchronized</code> 做了正确的事：不要暴露你的锁。</p>
-<blockquote>
-<p><a target="_blank" rel="noopener" href="https://github.com/codercuixin/lombok-translate/wiki/@Getter(lazy=true)">@Getter(lazy=true)</a></p>
-</blockquote>
-<p> 惰性加载是一种美德!</p>
-<blockquote>
-<p><a target="_blank" rel="noopener" href="https://github.com/codercuixin/lombok-translate/wiki/@Log-(and-friends)">@Log</a></p>
-</blockquote>
-<p> Captain’s Log, stardate 24435.7: “What was that line again?” </p>
-<blockquote>
-<p><a target="_blank" rel="noopener" href="https://www.projectlombok.org/features/experimental/all">experimental</a></p>
-</blockquote>
-<p>  Head to the lab: The new stuff we’re working on.</p>
+<h3 id="3-先搬会砖？-大四下到19年9月份"><a href="#3-先搬会砖？-大四下到19年9月份" class="headerlink" title="3.先搬会砖？ 大四下到19年9月份"></a>3.先搬会砖？ 大四下到19年9月份</h3><p>面向 API 编程对我而言是不难的，但时不时就会陷入困惑，到底计算机里面发生了什么？What’s going on here？How it works？Why why why？下面就是无限的焦虑。</p>
+<p>为此我先后买了极客时间 26 门课程，迄今为止大约学了一半多一点，可以说是贪婪，但确实学到了很多。可这些课程大多是偏向于实战的，计算机系统讲的较少。所以还是没有彻底解决我的疑问, 或者说自己还没有能力将这些知识串联起来。</p>
+<h3 id="4-从头再来-9月份至今"><a href="#4-从头再来-9月份至今" class="headerlink" title="4.从头再来 9月份至今"></a>4.从头再来 9月份至今</h3><p>我大学专业是软件工程，可工作才发现就只会各种编程语言的拼写。当然考试关于计算机的课程分数都还挺不错，俨然一副自我感觉良好的模样。我不知道以自己当时的水平如何考的 90 多分，可能老师题目出的简单些，Everybody happy？</p>
+<p>我想这样不行啊，于是就去研究 Java 的并发编程库，于是我看到了 Java 调用 C， C 调用汇编指令。这时才下定决心把冯大推荐的自学路径拿过来仔细看看！根据冯大的推荐路径和极客时间上聂老师的推荐，我先后看了编码-隐匿在计算机软硬件背后的语言，计算机组成与设计  ARM 版， K&amp;R 。目前结合Youtube 上的视频，在看深入理解计算机系统。由于看了 K&amp;R 对指针和 Memory 关系都熟悉了，又看了计组，再加上我大学时看过鸟哥的 Linux，所以这次看视频和书都可以看懂。虽然只是到第三章，但我确信自己可以看完。后面为了更加系统学习计科相关知识， 从 2019 下半年 年开始，主要根据左耳听风的练级攻略学习， 并在<a target="_blank" rel="noopener" href="https://www.douban.com/doulist/119819965/">豆瓣上建立了一个豆列来记录自己要看的书</a>）</p>
+<h3 id="5-总结"><a href="#5-总结" class="headerlink" title="5.总结"></a>5.总结</h3><p>这几年还是有点进步的。</p>
+<p>1.去除了一些贪念。没有什么武功秘籍，有的只是前辈们的避坑经验，让你少走弯路。方向不对，永远到不了终点。破山中贼易，破心中贼难，知易行难。</p>
+<p>2.思考多了一些，认知提高了一些。最近一年，看了一些启迪心智的书籍，听了一些得到的专栏，去除了自身的一些愚昧与无知，但也可能只是我以为我知道了，其实我并不知道。</p>
+<p>感谢每一位帮助我进步的人，Fenng，吴军,  左耳朵耗子，cazsay，MacTalk,  stormzhang….<br>希望自己 2020 再进步些。下面的图真的时看时新呢。</p>
+<p><img src="https://img-blog.csdnimg.cn/20210309173927483.jpg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1llbGxvd1N0YXI1,size_16,color_FFFFFF,t_70" alt="邓宁-克鲁格心理效应"></p>
 
     </div>
 
@@ -393,21 +338,18 @@
 
     <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/Lombok/" rel="tag"># Lombok</a>
+              <a href="/tags/%E9%9A%8F%E6%84%9F/" rel="tag"># 随感</a>
           </div>
 
         
 
           <div class="post-nav">
             <div class="post-nav-item">
-                <a href="/Consul%20%E5%91%BD%E4%BB%A4%E8%A1%8C%E6%9C%80%E5%85%A8%E6%96%87%E6%A1%A3/" rel="prev" title="Consul 命令行最全文档">
-                  <i class="fa fa-chevron-left"></i> Consul 命令行最全文档
+                <a href="/synchronized%E5%85%B3%E9%94%AE%E5%AD%97%E7%9A%84%E5%86%85%E5%AD%98%E8%AF%AD%E4%B9%89%E5%8F%8A%E5%AE%9E%E7%8E%B0/" rel="prev" title="synchronized关键字的内存语义及实现">
+                  <i class="fa fa-chevron-left"></i> synchronized关键字的内存语义及实现
                 </a>
             </div>
             <div class="post-nav-item">
-                <a href="/Unsafe%E4%BB%8B%E7%BB%8D%E5%8F%8ACAS%E5%8E%9F%E7%90%86%E8%A7%A3%E6%9E%90/" rel="next" title="Unsafe介绍及CAS原理解析">
-                  Unsafe介绍及CAS原理解析 <i class="fa fa-chevron-right"></i>
-                </a>
             </div>
           </div>
     </footer>
@@ -515,7 +457,7 @@ NexT.utils.loadComments('#gitalk-container', () => {
       repo        : 'gitalk',
       owner       : 'codercuixin',
       admin       : ['codercuixin'],
-      id          : '88c0d0b2485425280058314dd8595692',
+      id          : '5b97c252dd6e3b8f5b24b266d343efca',
         language: 'zh-CN',
       distractionFreeMode: true
     });
